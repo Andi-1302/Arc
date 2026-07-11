@@ -1,7 +1,8 @@
 import { useState } from 'react'
 import { createPortal } from 'react-dom'
-import type { Area } from '../db'
-import { createArea, updateArea } from '../lib/actions'
+import { useLiveQuery } from 'dexie-react-hooks'
+import { db, type Area } from '../db'
+import { createArea, deleteArea, updateArea } from '../lib/actions'
 import { compressImage } from '../lib/image'
 
 export default function AreaFormSheet({
@@ -17,6 +18,11 @@ export default function AreaFormSheet({
   const [color, setColor] = useState(area?.color ?? '#1F4FE0')
   const [image, setImage] = useState<string | undefined>(area?.image)
   const [saving, setSaving] = useState(false)
+
+  const goalCount = useLiveQuery(
+    () => (area ? db.goals.where('areaId').equals(area.id).count() : Promise.resolve(0)),
+    [area?.id],
+  )
 
   async function handleFile(e: React.ChangeEvent<HTMLInputElement>) {
     const file = e.target.files?.[0]
@@ -37,6 +43,13 @@ export default function AreaFormSheet({
     }
     setSaving(false)
     onSaved?.(id)
+    onClose()
+  }
+
+  async function handleDelete() {
+    if (!area) return
+    if (!window.confirm(`Delete area "${area.name}"? This can't be undone.`)) return
+    await deleteArea(area.id)
     onClose()
   }
 
@@ -79,6 +92,24 @@ export default function AreaFormSheet({
             Save
           </button>
         </div>
+
+        {area && (
+          <div className="mt-4 border-t border-black/5 pt-4">
+            {goalCount === 0 ? (
+              <button
+                type="button"
+                onClick={handleDelete}
+                className="w-full rounded-lg border border-warning/40 py-2 text-sm font-medium text-warning"
+              >
+                Delete area
+              </button>
+            ) : (
+              <p className="text-xs opacity-60">
+                Move or archive {goalCount === undefined ? "this area's goals" : `this area's ${goalCount} goal${goalCount === 1 ? '' : 's'}`} first to delete it.
+              </p>
+            )}
+          </div>
+        )}
       </div>
     </div>,
     document.body,

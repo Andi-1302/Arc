@@ -42,8 +42,8 @@ export default function GoalCard({ goal, tier }: { goal: Goal; tier: PriorityTie
         }
       />
       <div className="p-2.5">
-        <div className="flex items-center justify-between gap-1">
-          <span className="truncate text-sm font-medium">{goal.name}</span>
+        <div className="flex items-start justify-between gap-1.5">
+          <span className="text-sm font-medium leading-snug">{goal.name}</span>
           {label && (
             <span className="shrink-0 rounded-full bg-accent/10 px-1.5 py-0.5 text-[10px] font-medium text-accent">
               {label}

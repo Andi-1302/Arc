@@ -1,13 +1,15 @@
-import { Link, useParams } from 'react-router-dom'
+import { Link, useNavigate, useParams } from 'react-router-dom'
 import { useLiveQuery } from 'dexie-react-hooks'
 import { db, type Milestone } from '../db'
 import { getCurrentBlock } from '../lib/prioritized'
 import { goalTier, TIER_LABEL } from '../lib/goalOrder'
+import { archiveGoal } from '../lib/actions'
 import MetricsSection from '../components/MetricsSection'
 import MilestoneChain from '../components/MilestoneChain'
 
 export default function GoalDetail() {
   const { goalId } = useParams<{ goalId: string }>()
+  const navigate = useNavigate()
   const goal = useLiveQuery(() => (goalId ? db.goals.get(goalId) : undefined), [goalId])
   const area = useLiveQuery(() => (goal ? db.areas.get(goal.areaId) : undefined), [goal?.areaId])
   const blocks = useLiveQuery(() => db.blocks.toArray())
@@ -24,11 +26,24 @@ export default function GoalDetail() {
       ? Math.round((milestones.filter((m) => m.done).length / milestones.length) * 100)
       : null
 
+  async function handleArchive() {
+    if (!goalId) return
+    await archiveGoal(goalId)
+    navigate('/goals')
+  }
+
   return (
     <div className="pb-8">
-      <Link to="/goals" className="inline-block px-4 pt-4 text-sm font-medium text-accent">
-        ‹ Goals
-      </Link>
+      <div className="flex items-center justify-between px-4 pt-4">
+        <Link to="/goals" className="text-sm font-medium text-accent">
+          ‹ Goals
+        </Link>
+        {goal.status !== 'archived' && (
+          <button type="button" onClick={handleArchive} className="text-sm font-medium opacity-60">
+            Archive
+          </button>
+        )}
+      </div>
 
       {goal.coverImage && (
         <div

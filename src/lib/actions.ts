@@ -35,6 +35,10 @@ export async function updateArea(id: string, patch: { name: string; color: strin
   await db.areas.update(id, patch)
 }
 
+export async function deleteArea(id: string) {
+  await db.areas.delete(id)
+}
+
 export async function createGoal(input: {
   areaId: string
   name: string
@@ -46,6 +50,34 @@ export async function createGoal(input: {
   const goal: Goal = { id, status: 'active', createdAt: new Date().toISOString(), ...input }
   await db.goals.add(goal)
   return id
+}
+
+export async function archiveGoal(id: string) {
+  await db.goals.update(id, { status: 'archived' })
+}
+
+export async function restoreGoal(id: string) {
+  await db.goals.update(id, { status: 'active' })
+}
+
+/** Hard delete (spec §4.1: nothing is deleted except via explicit archive → delete). Cascades to the goal's own records. */
+export async function deleteGoalPermanently(goalId: string) {
+  const metricIds = (await db.metrics.where('goalId').equals(goalId).toArray()).map((m) => m.id)
+  if (metricIds.length > 0) await db.entries.where('metricId').anyOf(metricIds).delete()
+  await db.metrics.where('goalId').equals(goalId).delete()
+  await db.milestones.where('goalId').equals(goalId).delete()
+  await db.resources.where('goalId').equals(goalId).delete()
+  const cardIds = (await db.cards.where('goalId').equals(goalId).toArray()).map((c) => c.id)
+  if (cardIds.length > 0) await db.cardReviews.where('cardId').anyOf(cardIds).delete()
+  await db.cards.where('goalId').equals(goalId).delete()
+  await db.photos.where('goalId').equals(goalId).delete()
+
+  const linkedRoutines = await db.routines.where('goalIds').equals(goalId).toArray()
+  for (const routine of linkedRoutines) {
+    await db.routines.update(routine.id, { goalIds: routine.goalIds.filter((g) => g !== goalId) })
+  }
+
+  await db.goals.delete(goalId)
 }
 
 export async function createMetric(input: Omit<Metric, 'id'>) {
