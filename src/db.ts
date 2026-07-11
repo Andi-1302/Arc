@@ -192,6 +192,10 @@ export class BlocksDB extends Dexie {
       photos: 'id, goalId, date',
       settings: 'id',
     })
+    this.version(2).stores({
+      entries: 'id, metricId, date, [metricId+date]',
+      routineChecks: 'id, routineId, date, &[routineId+date]',
+    })
   }
 }
 

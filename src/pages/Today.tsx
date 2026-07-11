@@ -1,10 +1,17 @@
+import RoutineChecklist from '../components/RoutineChecklist'
+import DailyCheckIn from '../components/DailyCheckIn'
+import TomorrowPreview from '../components/TomorrowPreview'
+
 export default function Today() {
   return (
-    <div className="p-4">
-      <h1 className="font-display text-3xl font-semibold">Today</h1>
-      <p className="mt-2 text-sm opacity-70">
-        Block bar, checklist, daily check-in and tomorrow preview land here in build phase 2.
-      </p>
+    <div className="pb-4">
+      <RoutineChecklist />
+      <div className="border-t border-black/5">
+        <DailyCheckIn />
+      </div>
+      <div className="border-t border-black/5">
+        <TomorrowPreview />
+      </div>
     </div>
   )
 }
