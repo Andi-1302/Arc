@@ -1,4 +1,5 @@
-import { db } from '../db'
+import { db, type Goal, type Metric, type Module } from '../db'
+import { todayISO } from './date'
 
 const uid = () => crypto.randomUUID()
 
@@ -11,8 +12,59 @@ export async function toggleRoutineCheck(routineId: string, date: string) {
   }
 }
 
-export async function addMetricEntry(metricId: string, date: string, value: number) {
-  await db.entries.add({ id: uid(), metricId, date, value })
+export async function addMetricEntry(metricId: string, date: string, value: number, note?: string) {
+  await db.entries.add({ id: uid(), metricId, date, value, note })
+}
+
+export async function updateMetricEntry(id: string, patch: { date: string; value: number; note?: string }) {
+  await db.entries.update(id, patch)
+}
+
+export async function deleteMetricEntry(id: string) {
+  await db.entries.delete(id)
+}
+
+export async function createArea(patch: { name: string; color: string; image?: string }) {
+  const id = uid()
+  const count = await db.areas.count()
+  await db.areas.add({ id, sortOrder: count, ...patch })
+  return id
+}
+
+export async function updateArea(id: string, patch: { name: string; color: string; image?: string }) {
+  await db.areas.update(id, patch)
+}
+
+export async function createGoal(input: {
+  areaId: string
+  name: string
+  description?: string
+  coverImage?: string
+  modules: Module[]
+}) {
+  const id = uid()
+  const goal: Goal = { id, status: 'active', createdAt: new Date().toISOString(), ...input }
+  await db.goals.add(goal)
+  return id
+}
+
+export async function createMetric(input: Omit<Metric, 'id'>) {
+  const id = uid()
+  await db.metrics.add({ id, ...input })
+  return id
+}
+
+export async function addMilestone(goalId: string, title: string) {
+  const sortOrder = await db.milestones.where('goalId').equals(goalId).count()
+  await db.milestones.add({ id: uid(), goalId, title, done: false, sortOrder })
+}
+
+export async function toggleMilestone(id: string, done: boolean) {
+  await db.milestones.update(id, { done, doneAt: done ? todayISO() : undefined })
+}
+
+export async function deleteMilestone(id: string) {
+  await db.milestones.delete(id)
 }
 
 export async function saveDayLog(date: string, patch: { rating?: number; note?: string; tomorrowFocus?: string }) {

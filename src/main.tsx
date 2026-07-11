@@ -6,6 +6,7 @@ import './db'
 import App from './App.tsx'
 import Today from './pages/Today.tsx'
 import Goals from './pages/Goals.tsx'
+import GoalDetail from './pages/GoalDetail.tsx'
 import Stats from './pages/Stats.tsx'
 import More from './pages/More.tsx'
 
@@ -16,6 +17,7 @@ createRoot(document.getElementById('root')!).render(
         <Route element={<App />}>
           <Route index element={<Today />} />
           <Route path="goals" element={<Goals />} />
+          <Route path="goals/:goalId" element={<GoalDetail />} />
           <Route path="stats" element={<Stats />} />
           <Route path="more" element={<More />} />
         </Route>

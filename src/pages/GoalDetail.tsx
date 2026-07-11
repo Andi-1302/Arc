@@ -1,0 +1,76 @@
+import { Link, useParams } from 'react-router-dom'
+import { useLiveQuery } from 'dexie-react-hooks'
+import { db, type Milestone } from '../db'
+import { getCurrentBlock } from '../lib/prioritized'
+import { goalTier, TIER_LABEL } from '../lib/goalOrder'
+import MetricsSection from '../components/MetricsSection'
+import MilestoneChain from '../components/MilestoneChain'
+
+export default function GoalDetail() {
+  const { goalId } = useParams<{ goalId: string }>()
+  const goal = useLiveQuery(() => (goalId ? db.goals.get(goalId) : undefined), [goalId])
+  const area = useLiveQuery(() => (goal ? db.areas.get(goal.areaId) : undefined), [goal?.areaId])
+  const blocks = useLiveQuery(() => db.blocks.toArray())
+  const milestones = useLiveQuery(
+    () => (goalId ? db.milestones.where('goalId').equals(goalId).toArray() : Promise.resolve<Milestone[]>([])),
+    [goalId],
+  )
+
+  if (!goal || !blocks) return null
+
+  const tier = goalTier(goal, getCurrentBlock(blocks))
+  const progress =
+    goal.modules.includes('milestones') && milestones && milestones.length > 0
+      ? Math.round((milestones.filter((m) => m.done).length / milestones.length) * 100)
+      : null
+
+  return (
+    <div className="pb-8">
+      <Link to="/goals" className="inline-block px-4 pt-4 text-sm font-medium text-accent">
+        ‹ Goals
+      </Link>
+
+      {goal.coverImage && (
+        <div
+          className="mt-2 aspect-video w-full"
+          style={{ backgroundImage: `url(${goal.coverImage})`, backgroundSize: 'cover', backgroundPosition: 'center' }}
+        />
+      )}
+
+      <div className="px-4 py-3">
+        <div className="flex flex-wrap items-center gap-x-2 gap-y-1 text-xs opacity-60">
+          {area && (
+            <span className="flex items-center gap-1.5">
+              <span className="h-2 w-2 rounded-full" style={{ backgroundColor: area.color }} />
+              {area.name}
+            </span>
+          )}
+          <span>·</span>
+          <span className="capitalize">{goal.status}</span>
+          {TIER_LABEL[tier] && (
+            <>
+              <span>·</span>
+              <span className="font-medium text-accent">{TIER_LABEL[tier]}</span>
+            </>
+          )}
+        </div>
+        <h1 className="mt-1 font-display text-2xl font-semibold">{goal.name}</h1>
+        {goal.description && <p className="mt-1 text-sm opacity-70">{goal.description}</p>}
+        {progress !== null && (
+          <div className="mt-3">
+            <div className="flex justify-between text-xs opacity-60">
+              <span>Progress</span>
+              <span>{progress}%</span>
+            </div>
+            <div className="mt-1 h-1.5 rounded-full bg-black/10">
+              <div className="h-1.5 rounded-full bg-accent" style={{ width: `${progress}%` }} />
+            </div>
+          </div>
+        )}
+      </div>
+
+      {goal.modules.includes('metrics') && <MetricsSection goalId={goal.id} />}
+      {goal.modules.includes('milestones') && <MilestoneChain goalId={goal.id} />}
+    </div>
+  )
+}

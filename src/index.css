@@ -31,3 +31,22 @@ body {
   font-family: var(--font-body);
   -webkit-font-smoothing: antialiased;
 }
+
+/* Milestone check-off celebration (spec §5/§10) — skipped entirely under prefers-reduced-motion. */
+@media (prefers-reduced-motion: no-preference) {
+  @keyframes milestone-pop {
+    0% {
+      transform: scale(1);
+    }
+    50% {
+      transform: scale(1.25);
+    }
+    100% {
+      transform: scale(1);
+    }
+  }
+
+  .milestone-pop {
+    animation: milestone-pop 250ms ease-out;
+  }
+}
