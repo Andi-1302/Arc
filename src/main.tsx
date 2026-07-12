@@ -11,6 +11,7 @@ import Stats from './pages/Stats.tsx'
 import More from './pages/More.tsx'
 import Cycles from './pages/Cycles.tsx'
 import WeeklyReviews from './pages/WeeklyReviews.tsx'
+import Routines from './pages/Routines.tsx'
 
 createRoot(document.getElementById('root')!).render(
   <StrictMode>
@@ -24,6 +25,7 @@ createRoot(document.getElementById('root')!).render(
           <Route path="more" element={<More />} />
           <Route path="more/cycles" element={<Cycles />} />
           <Route path="more/reviews" element={<WeeklyReviews />} />
+          <Route path="more/routines" element={<Routines />} />
         </Route>
       </Routes>
     </BrowserRouter>

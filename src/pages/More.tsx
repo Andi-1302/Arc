@@ -20,6 +20,9 @@ export default function More() {
         <Link to="/more/cycles" className="block px-4 py-3 text-sm font-medium">
           Cycles ›
         </Link>
+        <Link to="/more/routines" className="block px-4 py-3 text-sm font-medium">
+          Routines ›
+        </Link>
         <Link to="/more/reviews" className="block px-4 py-3 text-sm font-medium">
           Weekly reviews ›
         </Link>

@@ -153,6 +153,31 @@ export async function updateRoutineSchedule(id: string, schedule: number[]) {
   await db.routines.update(id, { schedule })
 }
 
+interface RoutinePatch {
+  name: string
+  goalIds: string[]
+  schedule: number[]
+  quickMetricIds: string[]
+}
+
+export async function createRoutine(input: RoutinePatch) {
+  await db.routines.add({ id: uid(), active: true, ...input })
+}
+
+export async function updateRoutine(id: string, patch: RoutinePatch) {
+  await db.routines.update(id, { ...patch })
+}
+
+export async function setRoutineActive(id: string, active: boolean) {
+  await db.routines.update(id, { active })
+}
+
+export async function deleteRoutine(id: string) {
+  await db.routineChecks.where('routineId').equals(id).delete()
+  await db.strengths.delete(id)
+  await db.routines.delete(id)
+}
+
 export async function setBlockWeekFocus(blockId: string, isoWeek: string, note: string) {
   const block = await db.blocks.get(blockId)
   if (!block) return

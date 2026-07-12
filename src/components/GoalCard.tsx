@@ -34,26 +34,26 @@ export default function GoalCard({ goal, tier }: { goal: Goal; tier: PriorityTie
       }`}
     >
       <div
-        className="h-16 w-full bg-black/5"
+        className="h-10 w-full bg-black/5"
         style={
           goal.coverImage
             ? { backgroundImage: `url(${goal.coverImage})`, backgroundSize: 'cover', backgroundPosition: 'center' }
             : undefined
         }
       />
-      <div className="p-2.5">
+      <div className="p-2">
         <div className="flex items-start justify-between gap-1.5">
-          <span className="line-clamp-2 min-h-[2.5rem] text-sm font-medium leading-snug">{goal.name}</span>
+          <span className="line-clamp-2 min-h-[2.1rem] text-sm font-medium leading-tight">{goal.name}</span>
           {label && (
             <span className="shrink-0 rounded-full bg-accent/10 px-1.5 py-0.5 text-[10px] font-medium text-accent">
               {label}
             </span>
           )}
         </div>
-        <div className={`mt-1.5 h-1 rounded-full ${progress !== null ? 'bg-black/10' : ''}`}>
+        <div className={`mt-1 h-1 rounded-full ${progress !== null ? 'bg-black/10' : ''}`}>
           {progress !== null && <div className="h-1 rounded-full bg-accent" style={{ width: `${progress}%` }} />}
         </div>
-        <div className="mt-1.5 h-[26px]">{entries && entries.length > 1 && <Sparkline data={entries} />}</div>
+        <div className="mt-1 h-5">{entries && entries.length > 1 && <Sparkline data={entries} />}</div>
       </div>
     </button>
   )

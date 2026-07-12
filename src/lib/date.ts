@@ -1,3 +1,6 @@
+/** Mon..Sun, matching Routine.schedule's 0=Monday convention. */
+export const WEEKDAY_LABELS = ['M', 'T', 'W', 'T', 'F', 'S', 'S']
+
 function toISO(date: Date): string {
   const y = date.getFullYear()
   const m = String(date.getMonth() + 1).padStart(2, '0')

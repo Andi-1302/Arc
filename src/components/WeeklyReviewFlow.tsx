@@ -2,12 +2,10 @@ import { useState } from 'react'
 import { createPortal } from 'react-dom'
 import { useLiveQuery } from 'dexie-react-hooks'
 import { db, type Routine } from '../db'
-import { addDays, isoWeekString, todayISO } from '../lib/date'
+import { addDays, isoWeekString, todayISO, WEEKDAY_LABELS } from '../lib/date'
 import { computeWeeklyQuota } from '../lib/quota'
 import { getCurrentBlock, getPrioritizedGoalIds, getScoredRoutineIds } from '../lib/prioritized'
 import { addMetricEntry, createWeeklyReview, setBlockWeekFocus, updateRoutineSchedule } from '../lib/actions'
-
-const WEEKDAY_LABELS = ['M', 'T', 'W', 'T', 'F', 'S', 'S']
 
 export default function WeeklyReviewFlow({ week, onClose }: { week: string; onClose: () => void }) {
   const [step, setStep] = useState(1)

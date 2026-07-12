@@ -39,7 +39,7 @@ export default function AreaGroup({
       {goals.length === 0 ? (
         <p className="px-4 pb-3 text-sm opacity-60">No goals yet in this area.</p>
       ) : (
-        <div className="grid grid-cols-2 gap-3 px-4 pb-4 pt-2">
+        <div className="grid grid-cols-2 gap-2 px-4 pb-3 pt-1.5">
           {goals.map((goal) => (
             <GoalCard key={goal.id} goal={goal} tier={goalTier(goal, block)} />
           ))}

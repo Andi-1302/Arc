@@ -5,7 +5,7 @@
 
 ## 1. Purpose & philosophy
 
-A personal, local-first goal tracker for one user (Hagen), built around **sports periodization**:
+A personal, local-first goal tracker for one user (Andi), built around **sports periodization**:
 
 - Life is organized in **cycles (blocks)**: ~12-week periods with exactly ONE focus goal and max. 3 secondary goals. Everything else is automatically de-prioritized (grayed out, moved down) — never deleted.
 - Each block ends with a **reflection phase** (block-end flow), then a new cycle starts.
@@ -291,23 +291,3 @@ A precise training instrument for an athlete — not a generic dashboard, not a 
 5. Add a card, review with "Good" → no longer due today; queue respects caps.
 6. Daily rating 1–10 → appears as global metric in Stats.
 7. Export JSON → wipe DB → import → data restored (incl. a photo).
-8. Block-end flow: close block → summary shows metric start/end → new block created → deprioritized goal is grayed and pause prompt appeared.
-
-## 13. Build order (commit after each phase; run tests at the end)
-
-1. Scaffold: Vite + TS + Tailwind + Dexie schema + routing + tab bar + seed data.
-2. Today: routines, check-offs, quick entry, daily check-in, tomorrow preview, score badge + breakdown (strength engine).
-3. Goals: areas, wizard, goal cards, goal detail with metrics/milestones/entries + charts.
-4. Blocks & reviews: block bar, Sunday review flow, Cycles screen, block-end flow, priority/graying/pause logic.
-5. Knowledge modules: resources, notes, cards, SM-2 review flow, CSV export.
-6. Stats: dashboard, heatmap, global metrics.
-7. Photos (per-goal, compression) + photo compare slider. — deliberately last
-8. More/Settings: export/import, backup reminder, persist(), manifest shortcuts, PWA polish, GitHub Actions deploy.
-9. Playwright tests + fix findings.
-
-## 14. Roadmap (v2 — do NOT build now)
-
-- **Strava sync** (Garmin watch → Strava auto-sync → Strava API; OAuth token exchange via a tiny Cloudflare Worker) to auto-fill running metrics.
-- **Hevy CSV import** (user exports from Hevy settings; parser maps exercises → metrics). No Hevy API (Pro-only, costs money).
-- **"Generate cards from note" via Anthropic API** with a user-supplied API key stored locally (architecture: keep card creation behind a small interface so an AI generator can plug in).
-- Monthly schedules for routines; German/English toggle; reminders/notifications.
