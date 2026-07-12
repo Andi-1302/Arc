@@ -151,6 +151,8 @@ export interface PlanEntry {
   id: string
   title: string
   time?: string // "HH:MM"
+  durationMin?: number // only meaningful when time is set; defaults to 60 in the UI
+  areaId?: string // optional, colors the timetable block
   recurrence: PlanRecurrence
   date?: string // set when recurrence === 'once'
   weekday?: number // 0=Monday..6=Sunday, set when recurrence === 'weekly'

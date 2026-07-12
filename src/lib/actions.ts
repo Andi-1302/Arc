@@ -190,6 +190,8 @@ export async function deleteRoutine(id: string) {
 interface PlanEntryPatch {
   title: string
   time?: string
+  durationMin?: number
+  areaId?: string
   recurrence: PlanRecurrence
   date?: string
   weekday?: number

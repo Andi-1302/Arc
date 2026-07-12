@@ -1,20 +1,29 @@
 import { useState } from 'react'
 import { createPortal } from 'react-dom'
-import type { PlanEntry, PlanRecurrence } from '../db'
+import { useLiveQuery } from 'dexie-react-hooks'
+import { db, type PlanEntry, type PlanRecurrence } from '../db'
 import { todayISO, weekdayMon0, WEEKDAY_LABELS } from '../lib/date'
 import { createPlanEntry, deletePlanEntry, updatePlanEntry } from '../lib/actions'
+
+const DEFAULT_DURATION = 60
 
 export default function PlanEntryFormSheet({
   entry,
   defaultDate,
+  defaultTime,
   onClose,
 }: {
   entry?: PlanEntry
   defaultDate?: string
+  defaultTime?: string
   onClose: () => void
 }) {
+  const areas = useLiveQuery(() => db.areas.orderBy('sortOrder').toArray())
+
   const [title, setTitle] = useState(entry?.title ?? '')
-  const [time, setTime] = useState(entry?.time ?? '')
+  const [time, setTime] = useState(entry?.time ?? defaultTime ?? '')
+  const [durationMin, setDurationMin] = useState(entry?.durationMin ?? DEFAULT_DURATION)
+  const [areaId, setAreaId] = useState<string | undefined>(entry?.areaId)
   const [recurrence, setRecurrence] = useState<PlanRecurrence>(entry?.recurrence ?? 'once')
   const [date, setDate] = useState(entry?.date ?? defaultDate ?? todayISO())
   const [weekday, setWeekday] = useState(entry?.weekday ?? weekdayMon0(defaultDate ?? todayISO()))
@@ -26,6 +35,8 @@ export default function PlanEntryFormSheet({
     const patch = {
       title: title.trim(),
       time: time || undefined,
+      durationMin: time ? durationMin : undefined,
+      areaId,
       recurrence,
       date: recurrence === 'once' ? date : undefined,
       weekday: recurrence === 'weekly' ? weekday : undefined,
@@ -66,15 +77,58 @@ export default function PlanEntryFormSheet({
               className="mt-1 w-full rounded-lg border border-black/10 px-3 py-2"
             />
           </label>
-          <label className="block text-sm">
-            Time (optional)
-            <input
-              type="time"
-              value={time}
-              onChange={(e) => setTime(e.target.value)}
-              className="mt-1 w-full rounded-lg border border-black/10 px-3 py-2"
-            />
-          </label>
+          <div className="flex gap-3">
+            <label className="flex-1 text-sm">
+              Time (optional)
+              <input
+                type="time"
+                value={time}
+                onChange={(e) => setTime(e.target.value)}
+                className="mt-1 w-full rounded-lg border border-black/10 px-3 py-2"
+              />
+            </label>
+            {time && (
+              <label className="flex-1 text-sm">
+                Duration (min)
+                <input
+                  type="number"
+                  step={15}
+                  min={15}
+                  value={durationMin}
+                  onChange={(e) => setDurationMin(Number(e.target.value) || DEFAULT_DURATION)}
+                  className="mt-1 w-full rounded-lg border border-black/10 px-3 py-2"
+                />
+              </label>
+            )}
+          </div>
+
+          <div>
+            <p className="text-sm opacity-70">Color by area (optional)</p>
+            <div className="mt-1.5 flex flex-wrap gap-1.5">
+              <button
+                type="button"
+                onClick={() => setAreaId(undefined)}
+                className={`rounded-full border px-2.5 py-1 text-xs ${
+                  !areaId ? 'border-accent bg-accent/5 text-accent' : 'border-black/10'
+                }`}
+              >
+                None
+              </button>
+              {areas?.map((area) => (
+                <button
+                  key={area.id}
+                  type="button"
+                  onClick={() => setAreaId(area.id)}
+                  className={`flex items-center gap-1.5 rounded-full border px-2.5 py-1 text-xs ${
+                    areaId === area.id ? 'border-accent bg-accent/5 text-accent' : 'border-black/10'
+                  }`}
+                >
+                  <span className="h-2 w-2 rounded-full" style={{ backgroundColor: area.color }} />
+                  {area.name}
+                </button>
+              ))}
+            </div>
+          </div>
 
           <div>
             <p className="text-sm opacity-70">Repeats</p>
