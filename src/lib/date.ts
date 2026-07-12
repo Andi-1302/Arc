@@ -32,3 +32,17 @@ export function startOfIsoWeek(iso: string): string {
 export function endOfIsoWeek(iso: string): string {
   return addDays(iso, 6 - weekdayMon0(iso))
 }
+
+export function daysBetween(a: string, b: string): number {
+  return Math.round((fromISO(b).getTime() - fromISO(a).getTime()) / 86400000)
+}
+
+/** ISO 8601 week string, e.g. "2026-W28" (Monday-start weeks, week 1 contains the year's first Thursday). */
+export function isoWeekString(iso: string): string {
+  const d = fromISO(iso)
+  const dayNum = weekdayMon0(iso) + 1 // Monday=1..Sunday=7
+  d.setDate(d.getDate() + 4 - dayNum) // Thursday of this ISO week
+  const yearStart = new Date(d.getFullYear(), 0, 1)
+  const weekNo = Math.ceil((((d.getTime() - yearStart.getTime()) / 86400000) + 1) / 7)
+  return `${d.getFullYear()}-W${String(weekNo).padStart(2, '0')}`
+}

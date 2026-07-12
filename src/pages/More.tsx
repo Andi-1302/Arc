@@ -1,3 +1,4 @@
+import { Link } from 'react-router-dom'
 import { useLiveQuery } from 'dexie-react-hooks'
 import { db, SETTINGS_ID } from '../db'
 import { deleteGoalPermanently, restoreGoal, updateSettings } from '../lib/actions'
@@ -14,6 +15,15 @@ export default function More() {
   return (
     <div className="p-4">
       <h1 className="font-display text-3xl font-semibold">More</h1>
+
+      <nav className="mt-6 divide-y divide-black/5 overflow-hidden rounded-xl border border-black/5 bg-surface">
+        <Link to="/more/cycles" className="block px-4 py-3 text-sm font-medium">
+          Cycles ›
+        </Link>
+        <Link to="/more/reviews" className="block px-4 py-3 text-sm font-medium">
+          Weekly reviews ›
+        </Link>
+      </nav>
 
       <section className="mt-6">
         <h2 className="font-display text-lg font-semibold">Archive</h2>
@@ -56,7 +66,7 @@ export default function More() {
         </label>
       </section>
 
-      <p className="mt-6 text-sm opacity-70">Cycles, weekly reviews and the rest of Settings land here in build phases 4 and 8.</p>
+      <p className="mt-6 text-sm opacity-70">The rest of Settings (export/import, backup reminder, card caps) lands in build phase 8.</p>
     </div>
   )
 }

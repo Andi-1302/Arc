@@ -1,5 +1,6 @@
-import { db, SETTINGS_ID, type Goal, type Metric, type Module, type Settings } from '../db'
+import { db, SETTINGS_ID, type Goal, type Metric, type Module, type Routine, type Settings } from '../db'
 import { todayISO } from './date'
+import { routinesLosingPriority } from './block'
 
 const uid = () => crypto.randomUUID()
 
@@ -108,6 +109,63 @@ export async function deleteMilestone(id: string) {
 
 export async function updateSettings(patch: Partial<Omit<Settings, 'id'>>) {
   await db.settings.update(SETTINGS_ID, patch)
+}
+
+interface BlockPriorities {
+  name: string
+  startDate: string
+  endDate: string
+  focusGoalId: string
+  secondaryGoalIds: string[]
+}
+
+export async function createBlock(input: BlockPriorities) {
+  await db.blocks.add({ id: uid(), weeklyFocusNotes: {}, ...input })
+}
+
+export async function updateBlockPriorities(id: string, patch: BlockPriorities) {
+  await db.blocks.update(id, { ...patch })
+}
+
+export async function closeBlock(id: string, reflection: string) {
+  await db.blocks.update(id, { closedAt: new Date().toISOString(), reflection })
+}
+
+export async function pauseRoutines(ids: string[]) {
+  for (const id of ids) await db.routines.update(id, { active: false })
+}
+
+/** Spec §4.2: ask once whether to pause routines for goals that just lost priority. */
+export async function confirmAndPauseRoutines(
+  prevPrioritizedGoalIds: string[],
+  nextPrioritizedGoalIds: string[],
+  routines: Routine[],
+) {
+  const toPause = routinesLosingPriority(prevPrioritizedGoalIds, nextPrioritizedGoalIds, routines)
+  if (toPause.length === 0) return
+  const names = toPause.map((r) => r.name).join(', ')
+  if (window.confirm(`These goals lost priority. Pause their routines?\n${names}`)) {
+    await pauseRoutines(toPause.map((r) => r.id))
+  }
+}
+
+export async function updateRoutineSchedule(id: string, schedule: number[]) {
+  await db.routines.update(id, { schedule })
+}
+
+export async function setBlockWeekFocus(blockId: string, isoWeek: string, note: string) {
+  const block = await db.blocks.get(blockId)
+  if (!block) return
+  await db.blocks.update(blockId, { weeklyFocusNotes: { ...block.weeklyFocusNotes, [isoWeek]: note } })
+}
+
+export async function createWeeklyReview(input: {
+  isoWeek: string
+  processQuota: number
+  note: string
+  nextWeekFocus?: string
+}) {
+  await db.reviews.add({ id: uid(), createdAt: new Date().toISOString(), ...input })
 }
 
 export async function saveDayLog(

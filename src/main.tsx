@@ -9,6 +9,8 @@ import Goals from './pages/Goals.tsx'
 import GoalDetail from './pages/GoalDetail.tsx'
 import Stats from './pages/Stats.tsx'
 import More from './pages/More.tsx'
+import Cycles from './pages/Cycles.tsx'
+import WeeklyReviews from './pages/WeeklyReviews.tsx'
 
 createRoot(document.getElementById('root')!).render(
   <StrictMode>
@@ -20,6 +22,8 @@ createRoot(document.getElementById('root')!).render(
           <Route path="goals/:goalId" element={<GoalDetail />} />
           <Route path="stats" element={<Stats />} />
           <Route path="more" element={<More />} />
+          <Route path="more/cycles" element={<Cycles />} />
+          <Route path="more/reviews" element={<WeeklyReviews />} />
         </Route>
       </Routes>
     </BrowserRouter>

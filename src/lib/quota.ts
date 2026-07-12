@@ -1,6 +1,25 @@
 import type { Routine, RoutineCheck } from '../db'
 import { addDays, endOfIsoWeek, startOfIsoWeek, weekdayMon0 } from './date'
 
+/** Average of the weekly process quota ratio across each ISO week the block spans (weeks with nothing scheduled are skipped). */
+export function averageProcessQuota(
+  routines: Routine[],
+  checks: RoutineCheck[],
+  scoredRoutineIds: string[],
+  startDate: string,
+  endDate: string,
+): number {
+  const ratios: number[] = []
+  const lastWeek = startOfIsoWeek(endDate)
+  let week = startOfIsoWeek(startDate)
+  while (week <= lastWeek) {
+    const quota = computeWeeklyQuota(routines, checks, scoredRoutineIds, week)
+    if (quota.scheduled > 0) ratios.push(quota.ratio)
+    week = addDays(week, 7)
+  }
+  return ratios.length === 0 ? 0 : ratios.reduce((a, b) => a + b, 0) / ratios.length
+}
+
 export interface WeeklyQuota {
   completed: number
   scheduled: number
