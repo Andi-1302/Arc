@@ -1,7 +1,8 @@
 import { useLiveQuery } from 'dexie-react-hooks'
 import { db, SETTINGS_ID } from '../db'
 import BlockBar from '../components/BlockBar'
-import RoutineChecklist from '../components/RoutineChecklist'
+import WeekStrip from '../components/WeekStrip'
+import Checklist from '../components/Checklist'
 import DailyCheckIn from '../components/DailyCheckIn'
 import TomorrowPreview from '../components/TomorrowPreview'
 import WeeklyReviewPrompt from '../components/WeeklyReviewPrompt'
@@ -12,9 +13,10 @@ export default function Today() {
   return (
     <div className="pb-4">
       <BlockBar />
+      <WeekStrip />
       {!settings?.hideRoutineChecklist && (
         <div className="border-t border-black/5">
-          <RoutineChecklist />
+          <Checklist />
         </div>
       )}
       <div className="border-t border-black/5">

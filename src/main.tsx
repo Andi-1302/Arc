@@ -12,6 +12,7 @@ import More from './pages/More.tsx'
 import Cycles from './pages/Cycles.tsx'
 import WeeklyReviews from './pages/WeeklyReviews.tsx'
 import Routines from './pages/Routines.tsx'
+import Week from './pages/Week.tsx'
 
 createRoot(document.getElementById('root')!).render(
   <StrictMode>
@@ -19,6 +20,7 @@ createRoot(document.getElementById('root')!).render(
       <Routes>
         <Route element={<App />}>
           <Route index element={<Today />} />
+          <Route path="week" element={<Week />} />
           <Route path="goals" element={<Goals />} />
           <Route path="goals/:goalId" element={<GoalDetail />} />
           <Route path="stats" element={<Stats />} />

@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react'
 import { useLiveQuery } from 'dexie-react-hooks'
 import { db } from '../db'
 import { addDays, todayISO, weekdayMon0 } from '../lib/date'
+import { entriesForDate, sortChecklist } from '../lib/planEntries'
 import { saveDayLog } from '../lib/actions'
 
 export default function TomorrowPreview() {
@@ -11,6 +12,10 @@ export default function TomorrowPreview() {
   const routines = useLiveQuery(
     () => db.routines.filter((r) => r.active && r.schedule.includes(tomorrowWeekday)).toArray(),
     [tomorrowWeekday],
+  )
+  const planEntries = useLiveQuery(
+    () => db.planEntries.toArray().then((all) => entriesForDate(all, tomorrow)),
+    [tomorrow],
   )
   const dayLog = useLiveQuery(() => db.dayLogs.get(tomorrow), [tomorrow])
 
@@ -26,13 +31,21 @@ export default function TomorrowPreview() {
     }
   }
 
+  const items = sortChecklist([
+    ...(routines ?? []).map((r) => ({ key: `r-${r.id}`, title: r.name, time: undefined as string | undefined })),
+    ...(planEntries ?? []).map((e) => ({ key: `p-${e.id}`, title: e.title, time: e.time })),
+  ])
+
   return (
     <div className="px-4 py-4">
       <h2 className="font-display text-lg font-semibold">Tomorrow</h2>
-      {routines && routines.length > 0 ? (
+      {items.length > 0 ? (
         <ul className="mt-1 text-sm opacity-70">
-          {routines.map((r) => (
-            <li key={r.id}>{r.name}</li>
+          {items.map((item) => (
+            <li key={item.key}>
+              {item.title}
+              {item.time && <span className="ml-1.5 tabular-nums opacity-70">{item.time}</span>}
+            </li>
           ))}
         </ul>
       ) : (

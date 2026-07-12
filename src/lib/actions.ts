@@ -1,4 +1,13 @@
-import { db, SETTINGS_ID, type Goal, type Metric, type Module, type Routine, type Settings } from '../db'
+import {
+  db,
+  SETTINGS_ID,
+  type Goal,
+  type Metric,
+  type Module,
+  type PlanRecurrence,
+  type Routine,
+  type Settings,
+} from '../db'
 import { todayISO } from './date'
 import { routinesLosingPriority } from './block'
 
@@ -176,6 +185,36 @@ export async function deleteRoutine(id: string) {
   await db.routineChecks.where('routineId').equals(id).delete()
   await db.strengths.delete(id)
   await db.routines.delete(id)
+}
+
+interface PlanEntryPatch {
+  title: string
+  time?: string
+  recurrence: PlanRecurrence
+  date?: string
+  weekday?: number
+}
+
+export async function createPlanEntry(input: PlanEntryPatch) {
+  await db.planEntries.add({ id: uid(), createdAt: new Date().toISOString(), ...input })
+}
+
+export async function updatePlanEntry(id: string, patch: PlanEntryPatch) {
+  await db.planEntries.update(id, { ...patch })
+}
+
+export async function deletePlanEntry(id: string) {
+  await db.planEntryChecks.where('planEntryId').equals(id).delete()
+  await db.planEntries.delete(id)
+}
+
+export async function togglePlanEntryCheck(planEntryId: string, date: string) {
+  const existing = await db.planEntryChecks.where('[planEntryId+date]').equals([planEntryId, date]).first()
+  if (existing) {
+    await db.planEntryChecks.update(existing.id, { done: !existing.done })
+  } else {
+    await db.planEntryChecks.add({ id: uid(), planEntryId, date, done: true })
+  }
 }
 
 export async function setBlockWeekFocus(blockId: string, isoWeek: string, note: string) {

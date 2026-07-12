@@ -145,6 +145,25 @@ export interface Photo {
   caption?: string
 }
 
+export type PlanRecurrence = 'once' | 'weekly'
+
+export interface PlanEntry {
+  id: string
+  title: string
+  time?: string // "HH:MM"
+  recurrence: PlanRecurrence
+  date?: string // set when recurrence === 'once'
+  weekday?: number // 0=Monday..6=Sunday, set when recurrence === 'weekly'
+  createdAt: string
+}
+
+export interface PlanEntryCheck {
+  id: string
+  planEntryId: string
+  date: string
+  done: boolean
+}
+
 export interface Settings {
   id: string
   dailyQuestion: string
@@ -172,6 +191,8 @@ export class BlocksDB extends Dexie {
   cards!: EntityTable<Card, 'id'>
   cardReviews!: EntityTable<ReviewLog, 'id'>
   photos!: EntityTable<Photo, 'id'>
+  planEntries!: EntityTable<PlanEntry, 'id'>
+  planEntryChecks!: EntityTable<PlanEntryCheck, 'id'>
   settings!: EntityTable<Settings, 'id'>
 
   constructor() {
@@ -197,6 +218,10 @@ export class BlocksDB extends Dexie {
     this.version(2).stores({
       entries: 'id, metricId, date, [metricId+date]',
       routineChecks: 'id, routineId, date, &[routineId+date]',
+    })
+    this.version(3).stores({
+      planEntries: 'id, recurrence, date, weekday',
+      planEntryChecks: 'id, planEntryId, date, &[planEntryId+date]',
     })
   }
 }

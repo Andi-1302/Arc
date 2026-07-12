@@ -113,6 +113,25 @@ export function seedInitialData(db: BlocksDB) {
     { id: uid(), name: 'Progress photo (weekly)', goalIds: [goalPosture], schedule: [6], quickMetricIds: [], active: true },
   ])
 
+  db.planEntries.bulkAdd([
+    {
+      id: uid(),
+      title: 'Anatomy lecture',
+      time: '10:00',
+      recurrence: 'weekly',
+      weekday: 1,
+      createdAt,
+    },
+    {
+      id: uid(),
+      title: 'Half marathon',
+      time: '09:00',
+      recurrence: 'once',
+      date: '2026-08-30',
+      createdAt,
+    },
+  ])
+
   db.blocks.bulkAdd([
     {
       id: uid(),
