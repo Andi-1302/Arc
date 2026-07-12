@@ -5,16 +5,7 @@ import type { Area, Module } from '../db'
 import { createGoal } from '../lib/actions'
 import { compressImage } from '../lib/image'
 import AreaFormSheet from './AreaFormSheet'
-
-const MODULE_INFO: { key: Module; label: string; hint: string }[] = [
-  { key: 'metrics', label: 'Metrics', hint: 'Numeric tracking with charts.' },
-  { key: 'milestones', label: 'Milestones', hint: 'Ordered progression checklist.' },
-  { key: 'routines', label: 'Routines', hint: 'Recurring items on the Today checklist.' },
-  { key: 'resources', label: 'Resources', hint: 'Links and your own notes on them.' },
-  { key: 'cards', label: 'Cards', hint: 'Flashcards with spaced repetition.' },
-  { key: 'photos', label: 'Photos', hint: 'Monthly progress photos.' },
-  { key: 'notes', label: 'Notes', hint: 'Free-form notes on the goal.' },
-]
+import ModuleToggles from './ModuleToggles'
 
 export default function GoalWizard({ areas, onClose }: { areas: Area[]; onClose: () => void }) {
   const navigate = useNavigate()
@@ -26,10 +17,6 @@ export default function GoalWizard({ areas, onClose }: { areas: Area[]; onClose:
   const [coverImage, setCoverImage] = useState<string | undefined>()
   const [modules, setModules] = useState<Module[]>(['metrics', 'milestones'])
   const [saving, setSaving] = useState(false)
-
-  function toggleModule(key: Module) {
-    setModules((m) => (m.includes(key) ? m.filter((x) => x !== key) : [...m, key]))
-  }
 
   async function handleFile(e: React.ChangeEvent<HTMLInputElement>) {
     const file = e.target.files?.[0]
@@ -115,22 +102,11 @@ export default function GoalWizard({ areas, onClose }: { areas: Area[]; onClose:
         )}
 
         {step === 3 && (
-          <div className="mt-3 space-y-2">
+          <div className="mt-3">
             <p className="text-sm opacity-70">Toggle the modules this goal needs.</p>
-            {MODULE_INFO.map(({ key, label, hint }) => (
-              <label key={key} className="flex items-start gap-3 rounded-lg border border-black/10 px-3 py-2 text-sm">
-                <input
-                  type="checkbox"
-                  checked={modules.includes(key)}
-                  onChange={() => toggleModule(key)}
-                  className="mt-0.5"
-                />
-                <span>
-                  <span className="font-medium">{label}</span>
-                  <span className="block opacity-60">{hint}</span>
-                </span>
-              </label>
-            ))}
+            <div className="mt-2">
+              <ModuleToggles modules={modules} onChange={setModules} />
+            </div>
           </div>
         )}
 

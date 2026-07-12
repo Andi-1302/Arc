@@ -1,4 +1,4 @@
-import { db, type Goal, type Metric, type Module } from '../db'
+import { db, SETTINGS_ID, type Goal, type Metric, type Module, type Settings } from '../db'
 import { todayISO } from './date'
 
 const uid = () => crypto.randomUUID()
@@ -52,6 +52,13 @@ export async function createGoal(input: {
   return id
 }
 
+export async function updateGoal(
+  id: string,
+  patch: { name: string; description?: string; coverImage?: string; modules: Module[] },
+) {
+  await db.goals.update(id, patch)
+}
+
 export async function archiveGoal(id: string) {
   await db.goals.update(id, { status: 'archived' })
 }
@@ -99,7 +106,14 @@ export async function deleteMilestone(id: string) {
   await db.milestones.delete(id)
 }
 
-export async function saveDayLog(date: string, patch: { rating?: number; note?: string; tomorrowFocus?: string }) {
+export async function updateSettings(patch: Partial<Omit<Settings, 'id'>>) {
+  await db.settings.update(SETTINGS_ID, patch)
+}
+
+export async function saveDayLog(
+  date: string,
+  patch: { rating?: number; note?: string; tomorrowFocus?: string; gratitude?: string[] },
+) {
   const existing = await db.dayLogs.get(date)
   if (existing) {
     await db.dayLogs.update(date, patch)

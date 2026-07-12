@@ -110,7 +110,7 @@ export function seedInitialData(db: BlocksDB) {
     { id: uid(), name: 'Long run', goalIds: [goalEndurance], schedule: [5], quickMetricIds: [], active: true },
     { id: uid(), name: 'Strength — legs + arm rehab', goalIds: [goalStrength, goalPosture], schedule: [0, 4], quickMetricIds: [], active: true },
     { id: uid(), name: 'Upper body maintenance', goalIds: [goalStrength], schedule: [2], quickMetricIds: [], active: true },
-    { id: uid(), name: 'Progress photo (monthly)', goalIds: [goalPosture], schedule: [6], quickMetricIds: [], active: true },
+    { id: uid(), name: 'Progress photo (weekly)', goalIds: [goalPosture], schedule: [6], quickMetricIds: [], active: true },
   ])
 
   db.blocks.bulkAdd([
@@ -154,5 +154,6 @@ export function seedInitialData(db: BlocksDB) {
     dailyQuestion: 'How was your day?',
     newCardsPerDay: 10,
     dueCardsPerDay: 30,
+    hideRoutineChecklist: false,
   })
 }

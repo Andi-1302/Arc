@@ -105,6 +105,7 @@ export interface DayLog {
   rating?: number
   note?: string
   tomorrowFocus?: string
+  gratitude?: string[]
 }
 
 export interface Resource {
@@ -150,6 +151,7 @@ export interface Settings {
   newCardsPerDay: number
   dueCardsPerDay: number
   lastBackupAt?: string
+  hideRoutineChecklist: boolean
 }
 
 export const SETTINGS_ID = 'settings'

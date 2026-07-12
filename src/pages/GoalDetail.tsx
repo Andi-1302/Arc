@@ -1,3 +1,4 @@
+import { useState } from 'react'
 import { Link, useNavigate, useParams } from 'react-router-dom'
 import { useLiveQuery } from 'dexie-react-hooks'
 import { db, type Milestone } from '../db'
@@ -6,10 +7,12 @@ import { goalTier, TIER_LABEL } from '../lib/goalOrder'
 import { archiveGoal } from '../lib/actions'
 import MetricsSection from '../components/MetricsSection'
 import MilestoneChain from '../components/MilestoneChain'
+import EditGoalSheet from '../components/EditGoalSheet'
 
 export default function GoalDetail() {
   const { goalId } = useParams<{ goalId: string }>()
   const navigate = useNavigate()
+  const [editing, setEditing] = useState(false)
   const goal = useLiveQuery(() => (goalId ? db.goals.get(goalId) : undefined), [goalId])
   const area = useLiveQuery(() => (goal ? db.areas.get(goal.areaId) : undefined), [goal?.areaId])
   const blocks = useLiveQuery(() => db.blocks.toArray())
@@ -38,12 +41,19 @@ export default function GoalDetail() {
         <Link to="/goals" className="text-sm font-medium text-accent">
           ‹ Goals
         </Link>
-        {goal.status !== 'archived' && (
-          <button type="button" onClick={handleArchive} className="text-sm font-medium opacity-60">
-            Archive
+        <div className="flex items-center gap-4">
+          <button type="button" onClick={() => setEditing(true)} className="text-sm font-medium text-accent">
+            Edit
           </button>
-        )}
+          {goal.status !== 'archived' && (
+            <button type="button" onClick={handleArchive} className="text-sm font-medium opacity-60">
+              Archive
+            </button>
+          )}
+        </div>
       </div>
+
+      {editing && <EditGoalSheet goal={goal} onClose={() => setEditing(false)} />}
 
       {goal.coverImage && (
         <div

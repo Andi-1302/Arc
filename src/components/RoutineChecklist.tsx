@@ -1,14 +1,22 @@
-import { useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { useLiveQuery } from 'dexie-react-hooks'
 import { db, type Routine } from '../db'
 import { todayISO, weekdayMon0 } from '../lib/date'
 import { toggleRoutineCheck } from '../lib/actions'
 import QuickEntrySheet from './QuickEntrySheet'
 
+const UNDO_TIMEOUT_MS = 5000
+
 export default function RoutineChecklist() {
   const today = todayISO()
   const todayWeekday = weekdayMon0(today)
   const [quickEntryRoutine, setQuickEntryRoutine] = useState<Routine | null>(null)
+  const [undo, setUndo] = useState<{ routineId: string; name: string; wasDone: boolean } | null>(null)
+  const undoTimeout = useRef<ReturnType<typeof setTimeout> | null>(null)
+
+  useEffect(() => () => {
+    if (undoTimeout.current) clearTimeout(undoTimeout.current)
+  }, [])
 
   const routines = useLiveQuery(
     () => db.routines.filter((r) => r.active && r.schedule.includes(todayWeekday)).toArray(),
@@ -24,6 +32,17 @@ export default function RoutineChecklist() {
     if (!wasDone && routine.quickMetricIds.length > 0) {
       setQuickEntryRoutine(routine)
     }
+
+    if (undoTimeout.current) clearTimeout(undoTimeout.current)
+    setUndo({ routineId: routine.id, name: routine.name, wasDone })
+    undoTimeout.current = setTimeout(() => setUndo(null), UNDO_TIMEOUT_MS)
+  }
+
+  async function handleUndo() {
+    if (!undo) return
+    if (undoTimeout.current) clearTimeout(undoTimeout.current)
+    await toggleRoutineCheck(undo.routineId, today)
+    setUndo(null)
   }
 
   if (!routines) return null
@@ -53,6 +72,17 @@ export default function RoutineChecklist() {
 
       {quickEntryRoutine && (
         <QuickEntrySheet routine={quickEntryRoutine} date={today} onClose={() => setQuickEntryRoutine(null)} />
+      )}
+
+      {undo && (
+        <div className="pointer-events-none fixed inset-x-0 bottom-20 z-20 flex justify-center px-4">
+          <div className="pointer-events-auto flex items-center gap-3 rounded-full bg-ink px-4 py-2 text-sm text-white shadow-lg">
+            <span>{undo.wasDone ? 'Unchecked' : 'Checked'} {undo.name}</span>
+            <button type="button" onClick={handleUndo} className="font-semibold underline decoration-2">
+              Undo
+            </button>
+          </div>
+        </div>
       )}
     </div>
   )
