@@ -12,6 +12,7 @@ import More from './pages/More.tsx'
 import Cycles from './pages/Cycles.tsx'
 import WeeklyReviews from './pages/WeeklyReviews.tsx'
 import Routines from './pages/Routines.tsx'
+import Review from './pages/Review.tsx'
 import Week from './pages/Week.tsx'
 
 createRoot(document.getElementById('root')!).render(
@@ -28,6 +29,7 @@ createRoot(document.getElementById('root')!).render(
           <Route path="more/cycles" element={<Cycles />} />
           <Route path="more/reviews" element={<WeeklyReviews />} />
           <Route path="more/routines" element={<Routines />} />
+          <Route path="more/review" element={<Review />} />
         </Route>
       </Routes>
     </BrowserRouter>
