@@ -4,6 +4,7 @@ import { db } from '../db'
 import { todayISO } from '../lib/date'
 import { computeRoutineStrength } from '../lib/strength'
 import { getCurrentBlock, getPrioritizedGoalIds, getScoredRoutineIds } from '../lib/prioritized'
+import { dueCards } from '../lib/cards'
 import BreakdownSheet from './BreakdownSheet'
 
 export default function ScoreBadge() {
@@ -13,8 +14,15 @@ export default function ScoreBadge() {
   const routines = useLiveQuery(() => db.routines.toArray())
   const checks = useLiveQuery(() => db.routineChecks.toArray())
   const blocks = useLiveQuery(() => db.blocks.toArray())
+  const cards = useLiveQuery(() => db.cards.toArray())
+  const cardReviews = useLiveQuery(() => db.cardReviews.toArray())
 
-  if (!routines || !checks || !blocks) return null
+  if (!routines || !checks || !blocks || !cards || !cardReviews) return null
+
+  const cardsToday = {
+    due: dueCards(cards, today).length,
+    reviewedToday: cardReviews.filter((r) => r.date === today).length,
+  }
 
   const prioritizedGoalIds = getPrioritizedGoalIds(getCurrentBlock(blocks))
   const scoredIds = getScoredRoutineIds(routines, prioritizedGoalIds)
@@ -52,6 +60,7 @@ export default function ScoreBadge() {
           routines={routines}
           checks={checks}
           scoredRoutineIds={scoredIds}
+          cardsToday={cardsToday}
           onClose={() => setOpen(false)}
         />
       )}

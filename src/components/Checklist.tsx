@@ -1,10 +1,12 @@
 import { useEffect, useRef, useState } from 'react'
 import { useLiveQuery } from 'dexie-react-hooks'
-import { db, type PlanEntry, type Routine } from '../db'
+import { db, SETTINGS_ID, type Card, type PlanEntry, type Routine } from '../db'
 import { todayISO, weekdayMon0 } from '../lib/date'
 import { entriesForDate, sortChecklist } from '../lib/planEntries'
+import { buildReviewQueue } from '../lib/cards'
 import { toggleRoutineCheck, togglePlanEntryCheck } from '../lib/actions'
 import QuickEntrySheet from './QuickEntrySheet'
+import CardReviewFlow from './CardReviewFlow'
 
 const UNDO_TIMEOUT_MS = 5000
 
@@ -20,6 +22,8 @@ export default function Checklist() {
   const todayWeekday = weekdayMon0(today)
   const [quickEntryRoutine, setQuickEntryRoutine] = useState<Routine | null>(null)
   const [undo, setUndo] = useState<UndoState | null>(null)
+  // Snapshotted on open so grading a card (which shrinks the live due-queue) can't desync the review flow's index.
+  const [reviewQueue, setReviewQueue] = useState<Card[] | null>(null)
   const undoTimeout = useRef<ReturnType<typeof setTimeout> | null>(null)
 
   useEffect(
@@ -39,6 +43,8 @@ export default function Checklist() {
     [today],
   )
   const planChecks = useLiveQuery(() => db.planEntryChecks.where('date').equals(today).toArray(), [today])
+  const cards = useLiveQuery(() => db.cards.toArray())
+  const settings = useLiveQuery(() => db.settings.get(SETTINGS_ID))
 
   const isRoutineDone = (id: string) => routineChecks?.find((c) => c.routineId === id)?.done ?? false
   const isPlanDone = (id: string) => planChecks?.find((c) => c.planEntryId === id)?.done ?? false
@@ -74,6 +80,8 @@ export default function Checklist() {
 
   if (!routines || !planEntries) return null
 
+  const cardsQueue = cards && settings ? buildReviewQueue(cards, today, settings.dueCardsPerDay, settings.newCardsPerDay) : []
+
   const items = sortChecklist([
     ...routines.map((r) => ({
       key: `r-${r.id}`,
@@ -94,10 +102,26 @@ export default function Checklist() {
   return (
     <div className="px-4 py-4">
       <h2 className="font-display text-lg font-semibold">Checklist</h2>
-      {items.length === 0 ? (
+      {items.length === 0 && cardsQueue.length === 0 ? (
         <p className="mt-2 text-sm opacity-70">Nothing scheduled today.</p>
       ) : (
         <ul className="mt-2 divide-y divide-black/5">
+          {cardsQueue.length > 0 && (
+            <li className="flex items-center gap-3 py-3">
+              <button
+                type="button"
+                onClick={() => setReviewQueue(cardsQueue)}
+                className="flex flex-1 items-center gap-3 text-left"
+              >
+                <span className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-accent text-[11px] font-semibold text-white">
+                  {cardsQueue.length}
+                </span>
+                <span className="flex-1 font-medium text-accent">
+                  Review {cardsQueue.length} card{cardsQueue.length === 1 ? '' : 's'}
+                </span>
+              </button>
+            </li>
+          )}
           {items.map((item) => (
             <li key={item.key} className="flex items-center gap-3 py-3">
               <button
@@ -118,6 +142,8 @@ export default function Checklist() {
       {quickEntryRoutine && (
         <QuickEntrySheet routine={quickEntryRoutine} date={today} onClose={() => setQuickEntryRoutine(null)} />
       )}
+
+      {reviewQueue && <CardReviewFlow queue={reviewQueue} onClose={() => setReviewQueue(null)} />}
 
       {undo && (
         <div className="pointer-events-none fixed inset-x-0 bottom-20 z-20 flex justify-center px-4">

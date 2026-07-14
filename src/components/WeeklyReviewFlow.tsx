@@ -5,6 +5,7 @@ import { db, type Routine } from '../db'
 import { addDays, isoWeekString, todayISO, WEEKDAY_LABELS } from '../lib/date'
 import { computeWeeklyQuota } from '../lib/quota'
 import { getCurrentBlock, getPrioritizedGoalIds, getScoredRoutineIds } from '../lib/prioritized'
+import { dueCards } from '../lib/cards'
 import { addMetricEntry, createWeeklyReview, setBlockWeekFocus, updateRoutineSchedule } from '../lib/actions'
 
 export default function WeeklyReviewFlow({ week, onClose }: { week: string; onClose: () => void }) {
@@ -17,6 +18,8 @@ export default function WeeklyReviewFlow({ week, onClose }: { week: string; onCl
   const goals = useLiveQuery(() => db.goals.toArray())
   const metrics = useLiveQuery(() => db.metrics.toArray())
   const entries = useLiveQuery(() => db.entries.toArray())
+  const cards = useLiveQuery(() => db.cards.toArray())
+  const cardReviews = useLiveQuery(() => db.cardReviews.toArray())
 
   const [reflection, setReflection] = useState('')
   const [nextFocus, setNextFocus] = useState('')
@@ -24,12 +27,16 @@ export default function WeeklyReviewFlow({ week, onClose }: { week: string; onCl
   const [scheduleEdits, setScheduleEdits] = useState<Record<string, number[]>>({})
   const [saving, setSaving] = useState(false)
 
-  if (!blocks || !routines || !checks || !goals || !metrics || !entries) return null
+  if (!blocks || !routines || !checks || !goals || !metrics || !entries || !cards || !cardReviews) return null
 
   const block = getCurrentBlock(blocks)
   const prioritizedGoalIds = getPrioritizedGoalIds(block)
   const scoredRoutineIds = getScoredRoutineIds(routines, prioritizedGoalIds)
-  const quota = computeWeeklyQuota(routines, checks, scoredRoutineIds, today)
+  const cardsToday = {
+    due: dueCards(cards, today).length,
+    reviewedToday: cardReviews.filter((r) => r.date === today).length,
+  }
+  const quota = computeWeeklyQuota(routines, checks, scoredRoutineIds, today, cardsToday)
 
   const reviewMetrics: { goalName: string; metric: (typeof metrics)[number] }[] = []
   if (block) {

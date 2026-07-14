@@ -26,12 +26,22 @@ export interface WeeklyQuota {
   ratio: number
 }
 
-/** Process quota (spec §4.4): completed / scheduled routine instances for the ISO week. */
+export interface CardsScheduleToday {
+  due: number
+  reviewedToday: number
+}
+
+/**
+ * Process quota (spec §4.4): completed / scheduled routine instances for the ISO week.
+ * Due flashcards count as one schedulable item for the `today` day specifically (checked = review
+ * session completed) — only ever knowable for the actual current day, never reconstructed for past days.
+ */
 export function computeWeeklyQuota(
   routines: Routine[],
   checks: RoutineCheck[],
   scoredRoutineIds: string[],
   today: string,
+  cardsToday?: CardsScheduleToday,
 ): WeeklyQuota {
   const weekStart = startOfIsoWeek(today)
   const weekEnd = endOfIsoWeek(today)
@@ -49,6 +59,11 @@ export function computeWeeklyQuota(
       }
       date = addDays(date, 1)
     }
+  }
+
+  if (cardsToday && (cardsToday.due > 0 || cardsToday.reviewedToday > 0)) {
+    scheduled++
+    if (cardsToday.due === 0) completed++
   }
 
   return { completed, scheduled, ratio: scheduled === 0 ? 0 : completed / scheduled }

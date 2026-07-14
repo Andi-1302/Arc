@@ -1,7 +1,7 @@
 import { createPortal } from 'react-dom'
 import type { Routine, RoutineCheck } from '../db'
 import { todayISO } from '../lib/date'
-import { computeWeeklyQuota } from '../lib/quota'
+import { computeWeeklyQuota, type CardsScheduleToday } from '../lib/quota'
 
 interface StrengthRow {
   routine: Routine
@@ -14,6 +14,7 @@ export default function BreakdownSheet({
   routines,
   checks,
   scoredRoutineIds,
+  cardsToday,
   onClose,
 }: {
   overall: number
@@ -21,9 +22,10 @@ export default function BreakdownSheet({
   routines: Routine[]
   checks: RoutineCheck[]
   scoredRoutineIds: string[]
+  cardsToday: CardsScheduleToday
   onClose: () => void
 }) {
-  const quota = computeWeeklyQuota(routines, checks, scoredRoutineIds, todayISO())
+  const quota = computeWeeklyQuota(routines, checks, scoredRoutineIds, todayISO(), cardsToday)
 
   return createPortal(
     <div className="fixed inset-0 z-30 flex items-end bg-black/30" onClick={onClose}>

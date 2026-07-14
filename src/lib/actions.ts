@@ -1,6 +1,7 @@
 import {
   db,
   SETTINGS_ID,
+  type Card,
   type Goal,
   type Metric,
   type Module,
@@ -10,6 +11,7 @@ import {
 } from '../db'
 import { todayISO } from './date'
 import { routinesLosingPriority } from './block'
+import { applyGrade } from './sm2'
 
 const uid = () => crypto.randomUUID()
 
@@ -244,6 +246,58 @@ export async function saveDayLog(
   } else {
     await db.dayLogs.add({ date, ...patch })
   }
+}
+
+interface ResourcePatch {
+  title: string
+  url?: string
+  note?: string
+}
+
+export async function createResource(goalId: string, input: ResourcePatch) {
+  await db.resources.add({ id: uid(), goalId, createdAt: new Date().toISOString(), ...input })
+}
+
+export async function updateResource(id: string, patch: ResourcePatch) {
+  await db.resources.update(id, { ...patch })
+}
+
+export async function deleteResource(id: string) {
+  await db.resources.delete(id)
+}
+
+interface CardPatch {
+  front: string
+  back: string
+}
+
+export async function createCard(goalId: string, input: CardPatch & { sourceResourceId?: string }) {
+  await db.cards.add({
+    id: uid(),
+    goalId,
+    ease: 2.5,
+    intervalDays: 0,
+    reps: 0,
+    dueDate: todayISO(),
+    createdAt: new Date().toISOString(),
+    ...input,
+  })
+}
+
+export async function updateCard(id: string, patch: CardPatch) {
+  await db.cards.update(id, { ...patch })
+}
+
+export async function deleteCard(id: string) {
+  await db.cardReviews.where('cardId').equals(id).delete()
+  await db.cards.delete(id)
+}
+
+/** Grades a card via SM-2 (spec §7) and logs the review. */
+export async function gradeCard(card: Card, grade: 0 | 1 | 2 | 3) {
+  const result = applyGrade(card, grade)
+  await db.cards.update(card.id, result)
+  await db.cardReviews.add({ id: uid(), cardId: card.id, date: todayISO(), grade })
 }
 
 export async function saveDailyRating(date: string, rating: number) {

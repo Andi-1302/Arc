@@ -8,6 +8,8 @@ import { archiveGoal } from '../lib/actions'
 import MetricsSection from '../components/MetricsSection'
 import MilestoneChain from '../components/MilestoneChain'
 import EditGoalSheet from '../components/EditGoalSheet'
+import ResourcesSection from '../components/ResourcesSection'
+import CardsSection from '../components/CardsSection'
 
 export default function GoalDetail() {
   const { goalId } = useParams<{ goalId: string }>()
@@ -96,6 +98,9 @@ export default function GoalDetail() {
 
       {goal.modules.includes('metrics') && <MetricsSection goalId={goal.id} />}
       {goal.modules.includes('milestones') && <MilestoneChain goalId={goal.id} />}
+      {goal.modules.includes('resources') && <ResourcesSection goal={goal} mode="resources" />}
+      {goal.modules.includes('notes') && <ResourcesSection goal={goal} mode="notes" />}
+      {goal.modules.includes('cards') && <CardsSection goalId={goal.id} />}
     </div>
   )
 }
