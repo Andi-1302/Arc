@@ -291,3 +291,10 @@ A precise training instrument for an athlete — not a generic dashboard, not a 
 5. Add a card, review with "Good" → no longer due today; queue respects caps.
 6. Daily rating 1–10 → appears as global metric in Stats.
 7. Export JSON → wipe DB → import → data restored (incl. a photo).
+
+## 13. Roadmap (v2 — not building now)
+
+- **"Generate cards from note" via Anthropic API** with a user-supplied API key stored locally (architecture: keep card creation behind a small interface so an AI generator can plug in). Deliberately deferred until the core app is finished and deployed.
+- **Strava sync** (Garmin watch → Strava auto-sync → Strava API; OAuth token exchange via a tiny Cloudflare Worker) to auto-fill running metrics.
+- **Hevy CSV import** (user exports from Hevy settings; parser maps exercises → metrics). No Hevy API (Pro-only, costs money).
+- Monthly schedules for routines; German/English toggle; reminders/notifications.

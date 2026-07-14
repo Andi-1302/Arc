@@ -34,16 +34,29 @@ export default function BreakdownSheet({
         onClick={(e) => e.stopPropagation()}
       >
         <h3 className="font-display text-xl font-semibold">Consistency</h3>
-        <p className="mt-1 text-sm opacity-70">
-          Overall score: <strong>{Math.round(overall * 100)}%</strong> — average strength across this block's
-          routines.
-        </p>
-        <p className="mt-1 text-sm opacity-70">
-          This week's process quota:{' '}
-          <strong>
-            {quota.completed}/{quota.scheduled}
-          </strong>
-          {quota.scheduled > 0 ? ` (${Math.round(quota.ratio * 100)}%)` : ''}
+
+        <div className="mt-3 grid grid-cols-2 gap-3">
+          <div className="rounded-lg border border-black/10 p-3">
+            <p className="font-display text-2xl font-semibold tabular-nums">{Math.round(overall * 100)}%</p>
+            <p className="mt-0.5 text-xs font-medium">Overall score</p>
+            <p className="mt-1 text-xs opacity-60">
+              A slow, multi-day average. New or missed routines start near 0% and climb gradually — it won't
+              jump to match the quota.
+            </p>
+          </div>
+          <div className="rounded-lg border border-black/10 p-3">
+            <p className="font-display text-2xl font-semibold tabular-nums">
+              {quota.scheduled > 0 ? `${Math.round(quota.ratio * 100)}%` : '—'}
+            </p>
+            <p className="mt-0.5 text-xs font-medium">This week's quota</p>
+            <p className="mt-1 text-xs opacity-60">
+              {quota.completed}/{quota.scheduled} completed vs. scheduled — resets every week, moves fast.
+            </p>
+          </div>
+        </div>
+        <p className="mt-2 text-xs opacity-50">
+          These measure different timeframes, so a low overall score next to a high quota (or the reverse)
+          isn't a bug.
         </p>
 
         <ul className="mt-4 space-y-2">
