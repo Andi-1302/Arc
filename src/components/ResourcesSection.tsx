@@ -1,6 +1,7 @@
 import { useState } from 'react'
 import { useLiveQuery } from 'dexie-react-hooks'
 import { db, type Goal, type Resource } from '../db'
+import { isVideoLink } from '../lib/links'
 import ResourceFormSheet from './ResourceFormSheet'
 import AddCardSheet from './AddCardSheet'
 
@@ -17,7 +18,9 @@ export default function ResourcesSection({ goal, mode }: { goal: Goal; mode: 're
   const items = bothModulesEnabled ? all.filter((r) => (showUrl ? Boolean(r.url) : !r.url)) : all
 
   const title = showUrl ? 'Resources' : 'Notes'
-  const emptyText = showUrl ? 'No resources yet.' : 'No notes yet.'
+  const emptyText = showUrl
+    ? 'No resources yet — add links, including video (YouTube, Drive, Photos…).'
+    : 'No notes yet.'
 
   return (
     <div className="border-t border-black/5 px-4 py-4">
@@ -27,6 +30,11 @@ export default function ResourcesSection({ goal, mode }: { goal: Goal; mode: 're
           + Add
         </button>
       </div>
+      {showUrl && (
+        <p className="mt-0.5 text-xs opacity-60">
+          Links only — videos live in your gallery or cloud, the app just keeps the link.
+        </p>
+      )}
 
       {items.length === 0 ? (
         <p className="mt-2 text-sm opacity-60">{emptyText}</p>
@@ -35,7 +43,14 @@ export default function ResourcesSection({ goal, mode }: { goal: Goal; mode: 're
           {items.map((r) => (
             <li key={r.id} className="py-2.5">
               <button type="button" onClick={() => setEditing(r)} className="block w-full text-left">
-                <p className="text-sm font-medium">{r.title}</p>
+                <p className="flex items-center gap-1.5 text-sm font-medium">
+                  {r.title}
+                  {isVideoLink(r.url) && (
+                    <span className="rounded-full bg-accent/10 px-1.5 py-0.5 text-[10px] font-medium text-accent">
+                      ▶ Video
+                    </span>
+                  )}
+                </p>
                 {r.url && <p className="mt-0.5 truncate text-xs text-accent">{r.url}</p>}
                 {r.note && <p className="mt-0.5 text-sm opacity-70">{r.note}</p>}
               </button>

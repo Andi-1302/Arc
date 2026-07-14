@@ -38,6 +38,7 @@ export default function PhotosSection({ goalId }: { goalId: string }) {
       </div>
       <p className="mt-1 text-xs opacity-60">
         Daily photos live in your phone's gallery — add progress shots here whenever, weekly is a good rhythm.
+        For video, add a link under Resources instead — the app never stores video.
       </p>
 
       {photos.length === 0 ? (

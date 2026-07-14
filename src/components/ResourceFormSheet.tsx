@@ -61,7 +61,7 @@ export default function ResourceFormSheet({
             <input
               value={title}
               onChange={(e) => setTitle(e.target.value)}
-              placeholder={showUrl ? 'e.g. YouTube tutorial' : 'e.g. Key takeaway'}
+              placeholder={showUrl ? 'e.g. Handstand tutorial' : 'e.g. Key takeaway'}
               className="mt-1 w-full rounded-lg border border-black/10 px-3 py-2"
             />
           </label>
@@ -72,9 +72,13 @@ export default function ResourceFormSheet({
                 type="url"
                 value={url}
                 onChange={(e) => setUrl(e.target.value)}
-                placeholder="https://…"
+                placeholder="https://… (YouTube, Drive, Photos…)"
                 className="mt-1 w-full rounded-lg border border-black/10 px-3 py-2"
               />
+              <span className="mt-1 block text-xs opacity-60">
+                Videos live in your gallery or cloud storage — paste a link here rather than
+                uploading the file. The app never stores video.
+              </span>
             </label>
           )}
           <label className="block text-sm">
