@@ -92,6 +92,7 @@ export async function deleteGoalPermanently(goalId: string) {
   if (cardIds.length > 0) await db.cardReviews.where('cardId').anyOf(cardIds).delete()
   await db.cards.where('goalId').equals(goalId).delete()
   await db.photos.where('goalId').equals(goalId).delete()
+  await db.todos.where('goalId').equals(goalId).delete()
 
   const linkedRoutines = await db.routines.where('goalIds').equals(goalId).toArray()
   for (const routine of linkedRoutines) {
@@ -333,6 +334,30 @@ export async function exportBackup() {
 /** Replace-all restore from a previously exported backup file. Caller is responsible for confirming with the user first. */
 export async function importBackup(json: string) {
   await restoreFromBackupJson(json)
+}
+
+interface TodoPatch {
+  title: string
+  dueDate?: string
+  goalId?: string
+}
+
+export async function createTodo(input: TodoPatch) {
+  const id = uid()
+  await db.todos.add({ id, done: false, createdAt: new Date().toISOString(), ...input })
+  return id
+}
+
+export async function updateTodo(id: string, patch: TodoPatch) {
+  await db.todos.update(id, { ...patch })
+}
+
+export async function toggleTodo(id: string, done: boolean) {
+  await db.todos.update(id, { done, doneAt: done ? todayISO() : undefined })
+}
+
+export async function deleteTodo(id: string) {
+  await db.todos.delete(id)
 }
 
 export async function saveDailyRating(date: string, rating: number) {

@@ -3,6 +3,7 @@ import { db, SETTINGS_ID } from '../db'
 import BlockBar from '../components/BlockBar'
 import BackupReminderBanner from '../components/BackupReminderBanner'
 import Checklist from '../components/Checklist'
+import TodayTodos from '../components/TodayTodos'
 import DailyCheckIn from '../components/DailyCheckIn'
 import TomorrowPreview from '../components/TomorrowPreview'
 import WeeklyReviewPrompt from '../components/WeeklyReviewPrompt'
@@ -19,6 +20,9 @@ export default function Today() {
           <Checklist />
         </div>
       )}
+      <div className="border-t border-black/5">
+        <TodayTodos />
+      </div>
       <div className="border-t border-black/5">
         <DailyCheckIn />
       </div>

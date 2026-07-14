@@ -166,6 +166,16 @@ export interface PlanEntryCheck {
   done: boolean
 }
 
+export interface Todo {
+  id: string
+  title: string
+  done: boolean
+  doneAt?: string
+  dueDate?: string
+  goalId?: string
+  createdAt: string
+}
+
 export interface Settings {
   id: string
   dailyQuestion: string
@@ -196,6 +206,7 @@ export class BlocksDB extends Dexie {
   planEntries!: EntityTable<PlanEntry, 'id'>
   planEntryChecks!: EntityTable<PlanEntryCheck, 'id'>
   settings!: EntityTable<Settings, 'id'>
+  todos!: EntityTable<Todo, 'id'>
 
   constructor() {
     super('blocks')
@@ -224,6 +235,9 @@ export class BlocksDB extends Dexie {
     this.version(3).stores({
       planEntries: 'id, recurrence, date, weekday',
       planEntryChecks: 'id, planEntryId, date, &[planEntryId+date]',
+    })
+    this.version(4).stores({
+      todos: 'id, goalId, done, dueDate',
     })
   }
 }

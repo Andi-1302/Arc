@@ -11,6 +11,7 @@ import EditGoalSheet from '../components/EditGoalSheet'
 import ResourcesSection from '../components/ResourcesSection'
 import CardsSection from '../components/CardsSection'
 import PhotosSection from '../components/PhotosSection'
+import GoalTodosSection from '../components/GoalTodosSection'
 
 export default function GoalDetail() {
   const { goalId } = useParams<{ goalId: string }>()
@@ -103,6 +104,7 @@ export default function GoalDetail() {
       {goal.modules.includes('notes') && <ResourcesSection goal={goal} mode="notes" />}
       {goal.modules.includes('cards') && <CardsSection goalId={goal.id} />}
       {goal.modules.includes('photos') && <PhotosSection goalId={goal.id} />}
+      <GoalTodosSection goalId={goal.id} />
     </div>
   )
 }

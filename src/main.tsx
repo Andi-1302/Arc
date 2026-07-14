@@ -15,6 +15,7 @@ import Routines from './pages/Routines.tsx'
 import Review from './pages/Review.tsx'
 import Week from './pages/Week.tsx'
 import Settings from './pages/Settings.tsx'
+import Todos from './pages/Todos.tsx'
 
 createRoot(document.getElementById('root')!).render(
   <StrictMode>
@@ -31,6 +32,7 @@ createRoot(document.getElementById('root')!).render(
           <Route path="more/reviews" element={<WeeklyReviews />} />
           <Route path="more/routines" element={<Routines />} />
           <Route path="more/review" element={<Review />} />
+          <Route path="more/todos" element={<Todos />} />
           <Route path="more/settings" element={<Settings />} />
         </Route>
       </Routes>

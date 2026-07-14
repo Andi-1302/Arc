@@ -25,6 +25,9 @@ export default function More() {
         <Link to="/more/review" className="block px-4 py-3 text-sm font-medium">
           Review ›
         </Link>
+        <Link to="/more/todos" className="block px-4 py-3 text-sm font-medium">
+          Todos ›
+        </Link>
         <Link to="/more/reviews" className="block px-4 py-3 text-sm font-medium">
           Weekly reviews ›
         </Link>
