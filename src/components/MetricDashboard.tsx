@@ -1,7 +1,8 @@
 import { useState } from 'react'
 import { useLiveQuery } from 'dexie-react-hooks'
-import { db } from '../db'
+import { db, type Goal, type Metric } from '../db'
 import { addDays, todayISO } from '../lib/date'
+import { updateMetric } from '../lib/actions'
 import DashboardMetricChart from './DashboardMetricChart'
 
 const TIME_RANGES: { label: string; days: number | null }[] = [
@@ -10,6 +11,14 @@ const TIME_RANGES: { label: string; days: number | null }[] = [
   { label: '6mo', days: 182 },
   { label: 'All', days: null },
 ]
+
+/** A metric belongs to an area only via its goal's areaId. Global metrics (goalId null) only match "all". */
+function matchesAreaFilter(metric: Metric, goals: Goal[], areaFilter: string | 'all'): boolean {
+  if (areaFilter === 'all') return true
+  if (!metric.goalId) return false
+  const goal = goals.find((g) => g.id === metric.goalId)
+  return goal?.areaId === areaFilter
+}
 
 export default function MetricDashboard() {
   const metrics = useLiveQuery(() => db.metrics.toArray())
@@ -22,15 +31,11 @@ export default function MetricDashboard() {
 
   if (!metrics || !goals || !areas || !allEntries) return null
 
-  const dashboardMetrics = metrics.filter((m) => m.showOnDashboard)
-  const visibleMetrics =
-    areaFilter === 'all'
-      ? dashboardMetrics
-      : dashboardMetrics.filter((m) => {
-          if (!m.goalId) return true // global metrics always show, regardless of area filter
-          const goal = goals.find((g) => g.id === m.goalId)
-          return goal?.areaId === areaFilter
-        })
+  const visibleMetrics = metrics.filter((m) => m.showOnDashboard && matchesAreaFilter(m, goals, areaFilter))
+
+  const hiddenWithData = metrics.filter(
+    (m) => !m.showOnDashboard && matchesAreaFilter(m, goals, areaFilter) && allEntries.some((e) => e.metricId === m.id),
+  )
 
   const range = TIME_RANGES[rangeIndex]
   const cutoff = range.days ? addDays(todayISO(), -range.days) : null
@@ -79,7 +84,9 @@ export default function MetricDashboard() {
 
       {visibleMetrics.length === 0 ? (
         <p className="mt-4 text-sm opacity-60">
-          No metrics flagged for the dashboard yet — enable "Show on Stats dashboard" when adding a metric.
+          {areaFilter === 'all'
+            ? 'No metrics flagged for the dashboard yet.'
+            : 'No dashboard metrics in this area yet.'}
         </p>
       ) : (
         <div className="mt-3 space-y-3">
@@ -89,6 +96,29 @@ export default function MetricDashboard() {
               .sort((a, b) => a.date.localeCompare(b.date))
             return <DashboardMetricChart key={metric.id} metric={metric} entries={entries} />
           })}
+        </div>
+      )}
+
+      {hiddenWithData.length > 0 && (
+        <div className="mt-4">
+          <p className="text-xs font-medium opacity-60">Not shown yet</p>
+          <ul className="mt-1.5 space-y-1.5">
+            {hiddenWithData.map((metric) => (
+              <li
+                key={metric.id}
+                className="flex items-center justify-between rounded-lg border border-black/10 px-3 py-2 text-sm"
+              >
+                <span>{metric.name}</span>
+                <button
+                  type="button"
+                  onClick={() => updateMetric(metric.id, { showOnDashboard: true })}
+                  className="text-xs font-medium text-accent"
+                >
+                  Show on dashboard
+                </button>
+              </li>
+            ))}
+          </ul>
         </div>
       )}
     </div>

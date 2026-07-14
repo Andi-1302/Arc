@@ -5,6 +5,7 @@ import { db, type Metric, type MetricEntry } from '../db'
 import { todayISO } from '../lib/date'
 import { aggregateWeekly } from '../lib/metrics'
 import { addMetricEntry, deleteMetricEntry, updateMetricEntry } from '../lib/actions'
+import EditMetricSheet from './EditMetricSheet'
 
 export default function MetricBlock({ metric }: { metric: Metric }) {
   const entries = useLiveQuery(() => db.entries.where('metricId').equals(metric.id).sortBy('date'), [metric.id])
@@ -12,6 +13,7 @@ export default function MetricBlock({ metric }: { metric: Metric }) {
   const [date, setDate] = useState(todayISO())
   const [value, setValue] = useState('')
   const [editingId, setEditingId] = useState<string | null>(null)
+  const [editingMetric, setEditingMetric] = useState(false)
 
   if (!entries) return null
 
@@ -27,11 +29,17 @@ export default function MetricBlock({ metric }: { metric: Metric }) {
 
   return (
     <div>
-      <div className="flex items-baseline justify-between">
-        <h3 className="text-sm font-medium">
+      <div className="flex items-baseline justify-between gap-2">
+        <h3 className="min-w-0 truncate text-sm font-medium">
           {metric.name} <span className="opacity-50">({metric.unit})</span>
+          {metric.showOnDashboard && (
+            <span
+              className="ml-1.5 inline-block h-1.5 w-1.5 rounded-full bg-accent align-middle"
+              title="Shown on Stats dashboard"
+            />
+          )}
         </h3>
-        <div className="flex gap-1.5 text-xs">
+        <div className="flex shrink-0 items-center gap-1.5 text-xs">
           <button
             type="button"
             onClick={() => setView('raw')}
@@ -46,6 +54,10 @@ export default function MetricBlock({ metric }: { metric: Metric }) {
             className={view === 'weekly' ? 'font-semibold text-accent' : 'opacity-50'}
           >
             Weekly
+          </button>
+          <span className="opacity-30">·</span>
+          <button type="button" onClick={() => setEditingMetric(true)} className="opacity-50">
+            Edit
           </button>
         </div>
       </div>
@@ -119,6 +131,8 @@ export default function MetricBlock({ metric }: { metric: Metric }) {
           )}
         </ul>
       )}
+
+      {editingMetric && <EditMetricSheet metric={metric} onClose={() => setEditingMetric(false)} />}
     </div>
   )
 }

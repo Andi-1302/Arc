@@ -105,6 +105,15 @@ export async function createMetric(input: Omit<Metric, 'id'>) {
   return id
 }
 
+export async function updateMetric(id: string, patch: Partial<Omit<Metric, 'id' | 'goalId'>>) {
+  await db.metrics.update(id, patch)
+}
+
+export async function deleteMetric(id: string) {
+  await db.entries.where('metricId').equals(id).delete()
+  await db.metrics.delete(id)
+}
+
 export async function addMilestone(goalId: string, title: string) {
   const sortOrder = await db.milestones.where('goalId').equals(goalId).count()
   await db.milestones.add({ id: uid(), goalId, title, done: false, sortOrder })
