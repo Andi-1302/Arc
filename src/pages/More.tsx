@@ -1,11 +1,10 @@
 import { Link } from 'react-router-dom'
 import { useLiveQuery } from 'dexie-react-hooks'
-import { db, SETTINGS_ID } from '../db'
-import { deleteGoalPermanently, restoreGoal, updateSettings } from '../lib/actions'
+import { db } from '../db'
+import { deleteGoalPermanently, restoreGoal } from '../lib/actions'
 
 export default function More() {
   const archived = useLiveQuery(() => db.goals.where('status').equals('archived').toArray())
-  const settings = useLiveQuery(() => db.settings.get(SETTINGS_ID))
 
   async function handleDelete(id: string, name: string) {
     if (!window.confirm(`Delete "${name}" permanently? This can't be undone.`)) return
@@ -28,6 +27,9 @@ export default function More() {
         </Link>
         <Link to="/more/reviews" className="block px-4 py-3 text-sm font-medium">
           Weekly reviews ›
+        </Link>
+        <Link to="/more/settings" className="block px-4 py-3 text-sm font-medium">
+          Settings ›
         </Link>
       </nav>
 
@@ -53,26 +55,6 @@ export default function More() {
           </ul>
         )}
       </section>
-
-      <section className="mt-6">
-        <h2 className="font-display text-lg font-semibold">Settings</h2>
-        <label className="mt-2 flex items-center justify-between gap-3 text-sm">
-          <span>
-            Hide today's checklist
-            <span className="block text-xs opacity-60">
-              Hide routines on the Today screen for days you only want tracking.
-            </span>
-          </span>
-          <input
-            type="checkbox"
-            checked={settings?.hideRoutineChecklist ?? false}
-            onChange={(e) => updateSettings({ hideRoutineChecklist: e.target.checked })}
-            className="shrink-0"
-          />
-        </label>
-      </section>
-
-      <p className="mt-6 text-sm opacity-70">The rest of Settings (export/import, backup reminder, card caps) lands in build phase 8.</p>
     </div>
   )
 }

@@ -12,6 +12,8 @@ import {
 import { todayISO } from './date'
 import { routinesLosingPriority } from './block'
 import { applyGrade } from './sm2'
+import { buildBackupJson, restoreFromBackupJson } from './backup'
+import { downloadBlob } from './download'
 
 const uid = () => crypto.randomUUID()
 
@@ -319,6 +321,18 @@ export async function gradeCard(card: Card, grade: 0 | 1 | 2 | 3) {
   const result = applyGrade(card, grade)
   await db.cards.update(card.id, result)
   await db.cardReviews.add({ id: uid(), cardId: card.id, date: todayISO(), grade })
+}
+
+/** Builds and downloads the full backup, then records lastBackupAt (drives the phase-8 backup reminder). */
+export async function exportBackup() {
+  const json = await buildBackupJson()
+  downloadBlob(new Blob([json], { type: 'application/json' }), `blocks-backup-${todayISO()}.json`)
+  await updateSettings({ lastBackupAt: new Date().toISOString() })
+}
+
+/** Replace-all restore from a previously exported backup file. Caller is responsible for confirming with the user first. */
+export async function importBackup(json: string) {
+  await restoreFromBackupJson(json)
 }
 
 export async function saveDailyRating(date: string, rating: number) {

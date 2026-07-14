@@ -14,10 +14,11 @@ import WeeklyReviews from './pages/WeeklyReviews.tsx'
 import Routines from './pages/Routines.tsx'
 import Review from './pages/Review.tsx'
 import Week from './pages/Week.tsx'
+import Settings from './pages/Settings.tsx'
 
 createRoot(document.getElementById('root')!).render(
   <StrictMode>
-    <BrowserRouter>
+    <BrowserRouter basename={import.meta.env.BASE_URL}>
       <Routes>
         <Route element={<App />}>
           <Route index element={<Today />} />
@@ -30,6 +31,7 @@ createRoot(document.getElementById('root')!).render(
           <Route path="more/reviews" element={<WeeklyReviews />} />
           <Route path="more/routines" element={<Routines />} />
           <Route path="more/review" element={<Review />} />
+          <Route path="more/settings" element={<Settings />} />
         </Route>
       </Routes>
     </BrowserRouter>

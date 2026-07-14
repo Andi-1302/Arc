@@ -7,6 +7,7 @@ import { createPhoto } from '../lib/actions'
 import PhotoThumb from './PhotoThumb'
 import PhotoViewSheet from './PhotoViewSheet'
 import PhotoCompareSlider from './PhotoCompareSlider'
+import PhotoSideBySide from './PhotoSideBySide'
 
 export default function PhotosDashboard() {
   const goals = useLiveQuery(() => db.goals.where('status').notEqual('archived').toArray())
@@ -17,6 +18,7 @@ export default function PhotosDashboard() {
   const [uploading, setUploading] = useState(false)
   const [beforeId, setBeforeId] = useState<string | null>(null)
   const [afterId, setAfterId] = useState<string | null>(null)
+  const [useSlider, setUseSlider] = useState(false)
 
   if (!goals || !allPhotos) return null
 
@@ -35,6 +37,7 @@ export default function PhotosDashboard() {
   const activeGoal = photoGoals.find((g) => g.id === activeGoalId)
 
   const photos = [...allPhotos.filter((p) => p.goalId === activeGoalId)].sort((a, b) => a.date.localeCompare(b.date))
+  const photosNewestFirst = [...photos].reverse()
   const beforePhoto = photos.find((p) => p.id === beforeId) ?? photos[0]
   const afterPhoto = photos.find((p) => p.id === afterId) ?? photos[photos.length - 1]
 
@@ -92,14 +95,20 @@ export default function PhotosDashboard() {
 
           {photos.length >= 2 && beforePhoto && afterPhoto && (
             <div className="mt-4">
-              <p className="text-xs font-medium opacity-60">Compare</p>
+              <div className="flex items-center justify-between">
+                <p className="text-xs font-medium opacity-60">Compare</p>
+                <label className="flex items-center gap-1.5 text-xs opacity-70">
+                  <input type="checkbox" checked={useSlider} onChange={(e) => setUseSlider(e.target.checked)} />
+                  Slider
+                </label>
+              </div>
               <div className="mt-1.5 flex gap-2">
                 <select
                   value={beforePhoto.id}
                   onChange={(e) => setBeforeId(e.target.value)}
                   className="flex-1 rounded-lg border border-black/10 px-2 py-1.5 text-xs"
                 >
-                  {photos.map((p) => (
+                  {photosNewestFirst.map((p) => (
                     <option key={p.id} value={p.id}>
                       {p.date}
                     </option>
@@ -110,7 +119,7 @@ export default function PhotosDashboard() {
                   onChange={(e) => setAfterId(e.target.value)}
                   className="flex-1 rounded-lg border border-black/10 px-2 py-1.5 text-xs"
                 >
-                  {photos.map((p) => (
+                  {photosNewestFirst.map((p) => (
                     <option key={p.id} value={p.id}>
                       {p.date}
                     </option>
@@ -118,7 +127,11 @@ export default function PhotosDashboard() {
                 </select>
               </div>
               <div className="mt-2">
-                <PhotoCompareSlider before={beforePhoto} after={afterPhoto} />
+                {useSlider ? (
+                  <PhotoCompareSlider before={beforePhoto} after={afterPhoto} />
+                ) : (
+                  <PhotoSideBySide before={beforePhoto} after={afterPhoto} />
+                )}
               </div>
             </div>
           )}
