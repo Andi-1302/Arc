@@ -234,3 +234,6 @@ db.on('populate', () => seedInitialData(db))
 
 // open eagerly so seeding runs on first launch instead of on first query
 db.open().catch((err) => console.error('Failed to open db', err))
+
+// spec §9: ask the browser not to evict IndexedDB under storage pressure (photos make this matter)
+navigator.storage?.persist?.().catch(() => {})

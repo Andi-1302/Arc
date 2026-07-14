@@ -12,9 +12,12 @@ const TIME_RANGES: { label: string; days: number | null }[] = [
   { label: 'All', days: null },
 ]
 
-/** A metric belongs to an area only via its goal's areaId. Global metrics (goalId null) only match "all". */
-function matchesAreaFilter(metric: Metric, goals: Goal[], areaFilter: string | 'all'): boolean {
+type AreaFilter = 'all' | 'global' | string
+
+/** A metric belongs to an area only via its goal's areaId. Global metrics (goalId null) match "all" or "global". */
+function matchesAreaFilter(metric: Metric, goals: Goal[], areaFilter: AreaFilter): boolean {
   if (areaFilter === 'all') return true
+  if (areaFilter === 'global') return !metric.goalId
   if (!metric.goalId) return false
   const goal = goals.find((g) => g.id === metric.goalId)
   return goal?.areaId === areaFilter
@@ -26,7 +29,7 @@ export default function MetricDashboard() {
   const areas = useLiveQuery(() => db.areas.orderBy('sortOrder').toArray())
   const allEntries = useLiveQuery(() => db.entries.toArray())
 
-  const [areaFilter, setAreaFilter] = useState<string | 'all'>('all')
+  const [areaFilter, setAreaFilter] = useState<AreaFilter>('all')
   const [rangeIndex, setRangeIndex] = useState(1)
 
   if (!metrics || !goals || !areas || !allEntries) return null
@@ -67,6 +70,15 @@ export default function MetricDashboard() {
         >
           All
         </button>
+        <button
+          type="button"
+          onClick={() => setAreaFilter('global')}
+          className={`shrink-0 rounded-full border px-2.5 py-1 text-xs font-medium ${
+            areaFilter === 'global' ? 'border-accent bg-accent/5 text-accent' : 'border-black/10 opacity-70'
+          }`}
+        >
+          General
+        </button>
         {areas.map((area) => (
           <button
             key={area.id}
@@ -86,7 +98,9 @@ export default function MetricDashboard() {
         <p className="mt-4 text-sm opacity-60">
           {areaFilter === 'all'
             ? 'No metrics flagged for the dashboard yet.'
-            : 'No dashboard metrics in this area yet.'}
+            : areaFilter === 'global'
+              ? 'No general metrics on the dashboard yet.'
+              : 'No dashboard metrics in this area yet.'}
         </p>
       ) : (
         <div className="mt-3 space-y-3">

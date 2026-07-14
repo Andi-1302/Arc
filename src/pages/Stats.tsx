@@ -1,5 +1,6 @@
 import MetricDashboard from '../components/MetricDashboard'
 import ConsistencyHeatmap from '../components/ConsistencyHeatmap'
+import PhotosDashboard from '../components/PhotosDashboard'
 
 export default function Stats() {
   return (
@@ -23,9 +24,9 @@ export default function Stats() {
 
       <section className="border-t border-black/5 px-4 py-4">
         <h2 className="font-display text-lg font-semibold">Photos</h2>
-        <p className="mt-1 text-sm opacity-60">
-          Per-goal photo timelines and a before/after compare slider land here in build phase 7.
-        </p>
+        <div className="mt-2">
+          <PhotosDashboard />
+        </div>
       </section>
     </div>
   )

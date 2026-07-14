@@ -10,6 +10,7 @@ import MilestoneChain from '../components/MilestoneChain'
 import EditGoalSheet from '../components/EditGoalSheet'
 import ResourcesSection from '../components/ResourcesSection'
 import CardsSection from '../components/CardsSection'
+import PhotosSection from '../components/PhotosSection'
 
 export default function GoalDetail() {
   const { goalId } = useParams<{ goalId: string }>()
@@ -101,6 +102,7 @@ export default function GoalDetail() {
       {goal.modules.includes('resources') && <ResourcesSection goal={goal} mode="resources" />}
       {goal.modules.includes('notes') && <ResourcesSection goal={goal} mode="notes" />}
       {goal.modules.includes('cards') && <CardsSection goalId={goal.id} />}
+      {goal.modules.includes('photos') && <PhotosSection goalId={goal.id} />}
     </div>
   )
 }

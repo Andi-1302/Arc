@@ -275,6 +275,18 @@ export async function deleteResource(id: string) {
   await db.resources.delete(id)
 }
 
+export async function createPhoto(goalId: string, blob: Blob, date: string, caption?: string) {
+  await db.photos.add({ id: uid(), goalId, date, blob, caption })
+}
+
+export async function updatePhotoCaption(id: string, caption?: string) {
+  await db.photos.update(id, { caption })
+}
+
+export async function deletePhoto(id: string) {
+  await db.photos.delete(id)
+}
+
 interface CardPatch {
   front: string
   back: string
