@@ -6,6 +6,7 @@ import { entriesForDate, layoutTimed, minutesToTime } from '../lib/planEntries'
 import { getCurrentBlock } from '../lib/prioritized'
 import { hexToRgba } from '../lib/color'
 import PlanEntryFormSheet from '../components/PlanEntryFormSheet'
+import { throwIfDevCrashRequested } from '../lib/devCrash'
 
 const WEEKDAY_SHORT = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun']
 const RANGE_START = 6 * 60 // 06:00
@@ -20,6 +21,7 @@ function nowMinutes(): number {
 }
 
 export default function Week() {
+  throwIfDevCrashRequested('week')
   const today = todayISO()
   const weekStart = startOfIsoWeek(today)
   const days = Array.from({ length: 7 }, (_, i) => addDays(weekStart, i))

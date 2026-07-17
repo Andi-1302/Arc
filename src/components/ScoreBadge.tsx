@@ -6,8 +6,10 @@ import { computeRoutineStrength } from '../lib/strength'
 import { getCurrentBlock, getPrioritizedGoalIds, getScoredRoutineIds } from '../lib/prioritized'
 import { dueCards } from '../lib/cards'
 import BreakdownSheet from './BreakdownSheet'
+import { throwIfDevCrashRequested } from '../lib/devCrash'
 
 export default function ScoreBadge() {
+  throwIfDevCrashRequested('badge')
   const [open, setOpen] = useState(false)
   const today = todayISO()
 

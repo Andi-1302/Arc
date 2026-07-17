@@ -196,9 +196,11 @@ export async function setRoutineActive(id: string, active: boolean) {
 }
 
 export async function deleteRoutine(id: string) {
-  await db.routineChecks.where('routineId').equals(id).delete()
-  await db.strengths.delete(id)
-  await db.routines.delete(id)
+  await db.transaction('rw', [db.routineChecks, db.strengths, db.routines], async () => {
+    await db.routineChecks.where('routineId').equals(id).delete()
+    await db.strengths.delete(id)
+    await db.routines.delete(id)
+  })
 }
 
 interface PlanEntryPatch {
