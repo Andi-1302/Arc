@@ -11,6 +11,7 @@ export default function Settings() {
   const [question, setQuestion] = useState('')
   const [dueCap, setDueCap] = useState('')
   const [newCap, setNewCap] = useState('')
+  const [cutoffHour, setCutoffHour] = useState('')
   const [exporting, setExporting] = useState(false)
   const [importing, setImporting] = useState(false)
 
@@ -19,6 +20,7 @@ export default function Settings() {
     setQuestion(settings.dailyQuestion)
     setDueCap(String(settings.dueCardsPerDay))
     setNewCap(String(settings.newCardsPerDay))
+    setCutoffHour(String(settings.dayCutoffHour ?? 4))
   }, [settings])
 
   if (!settings) return null
@@ -41,6 +43,13 @@ export default function Settings() {
     const n = Math.round(Number(newCap))
     if (Number.isFinite(n) && n > 0 && n !== settings!.newCardsPerDay) {
       await updateSettings({ newCardsPerDay: n })
+    }
+  }
+
+  async function handleCutoffBlur() {
+    const n = Math.round(Number(cutoffHour))
+    if (Number.isFinite(n) && n >= 0 && n <= 12 && n !== (settings!.dayCutoffHour ?? 4)) {
+      await updateSettings({ dayCutoffHour: n })
     }
   }
 
@@ -129,6 +138,22 @@ export default function Settings() {
             onBlur={handleQuestionBlur}
             className="mt-1 w-full rounded-lg border border-black/10 px-3 py-2"
           />
+        </label>
+        <label className="mt-3 block text-sm">
+          My day ends at
+          <input
+            type="number"
+            inputMode="numeric"
+            min={0}
+            max={12}
+            value={cutoffHour}
+            onChange={(e) => setCutoffHour(e.target.value)}
+            onBlur={handleCutoffBlur}
+            className="mt-1 w-full rounded-lg border border-black/10 px-3 py-2"
+          />
+          <span className="mt-1 block text-xs opacity-60">
+            A check-in done after midnight but before this hour is offered for the previous day.
+          </span>
         </label>
       </section>
 

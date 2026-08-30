@@ -3,6 +3,7 @@ import { createRoot } from 'react-dom/client'
 import { BrowserRouter, Routes, Route } from 'react-router-dom'
 import './index.css'
 import './db'
+import { TodayProvider } from './lib/useToday.ts'
 import App from './App.tsx'
 import Today from './pages/Today.tsx'
 import Goals from './pages/Goals.tsx'
@@ -19,23 +20,25 @@ import Todos from './pages/Todos.tsx'
 
 createRoot(document.getElementById('root')!).render(
   <StrictMode>
-    <BrowserRouter basename={import.meta.env.BASE_URL}>
-      <Routes>
-        <Route element={<App />}>
-          <Route index element={<Today />} />
-          <Route path="week" element={<Week />} />
-          <Route path="goals" element={<Goals />} />
-          <Route path="goals/:goalId" element={<GoalDetail />} />
-          <Route path="stats" element={<Stats />} />
-          <Route path="more" element={<More />} />
-          <Route path="more/cycles" element={<Cycles />} />
-          <Route path="more/reviews" element={<WeeklyReviews />} />
-          <Route path="more/routines" element={<Routines />} />
-          <Route path="more/review" element={<Review />} />
-          <Route path="more/todos" element={<Todos />} />
-          <Route path="more/settings" element={<Settings />} />
-        </Route>
-      </Routes>
-    </BrowserRouter>
+    <TodayProvider>
+      <BrowserRouter basename={import.meta.env.BASE_URL}>
+        <Routes>
+          <Route element={<App />}>
+            <Route index element={<Today />} />
+            <Route path="week" element={<Week />} />
+            <Route path="goals" element={<Goals />} />
+            <Route path="goals/:goalId" element={<GoalDetail />} />
+            <Route path="stats" element={<Stats />} />
+            <Route path="more" element={<More />} />
+            <Route path="more/cycles" element={<Cycles />} />
+            <Route path="more/reviews" element={<WeeklyReviews />} />
+            <Route path="more/routines" element={<Routines />} />
+            <Route path="more/review" element={<Review />} />
+            <Route path="more/todos" element={<Todos />} />
+            <Route path="more/settings" element={<Settings />} />
+          </Route>
+        </Routes>
+      </BrowserRouter>
+    </TodayProvider>
   </StrictMode>,
 )

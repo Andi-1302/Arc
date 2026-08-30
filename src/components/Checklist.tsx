@@ -1,7 +1,8 @@
 import { useEffect, useRef, useState } from 'react'
 import { useLiveQuery } from 'dexie-react-hooks'
 import { db, SETTINGS_ID, type Card, type PlanEntry, type Routine } from '../db'
-import { todayISO, weekdayMon0 } from '../lib/date'
+import { weekdayMon0 } from '../lib/date'
+import { useToday } from '../lib/useToday'
 import { entriesForDate, sortChecklist } from '../lib/planEntries'
 import { buildReviewQueue } from '../lib/cards'
 import { toggleRoutineCheck, togglePlanEntryCheck } from '../lib/actions'
@@ -17,8 +18,12 @@ interface UndoState {
   wasDone: boolean
 }
 
-export default function Checklist() {
-  const today = todayISO()
+export default function Checklist({ date }: { date: string }) {
+  // Routine and plan checks are written for the selected day (which may be back-dated
+  // from the Today date navigator); the flashcard queue always uses the real current
+  // date — spaced repetition must never be back-dated (spec §4.5 vs §7).
+  const today = date
+  const realToday = useToday()
   const todayWeekday = weekdayMon0(today)
   const [quickEntryRoutine, setQuickEntryRoutine] = useState<Routine | null>(null)
   const [undo, setUndo] = useState<UndoState | null>(null)
@@ -80,7 +85,8 @@ export default function Checklist() {
 
   if (!routines || !planEntries) return null
 
-  const cardsQueue = cards && settings ? buildReviewQueue(cards, today, settings.dueCardsPerDay, settings.newCardsPerDay) : []
+  const cardsQueue =
+    cards && settings ? buildReviewQueue(cards, realToday, settings.dueCardsPerDay, settings.newCardsPerDay) : []
 
   const items = sortChecklist([
     ...routines.map((r) => ({

@@ -1,6 +1,5 @@
 import { db } from '../db'
-
-const BACKUP_VERSION = 1
+import { BACKUP_VERSION, migrateBackupData } from './backupMigrations'
 
 function blobToBase64(blob: Blob): Promise<string> {
   return new Promise((resolve, reject) => {
@@ -29,7 +28,11 @@ export async function buildBackupJson(): Promise<string> {
   return JSON.stringify({ version: BACKUP_VERSION, exportedAt: new Date().toISOString(), data }, null, 2)
 }
 
-/** Replace-all restore: wipes every table, then repopulates from the backup. Photo blobs are decoded back from base64. */
+/**
+ * Replace-all restore: reads the backup's format version, upgrades its contents to the
+ * current format, then (and only then) wipes every table and repopulates from it.
+ * Photo blobs are decoded back from base64.
+ */
 export async function restoreFromBackupJson(json: string): Promise<void> {
   let parsed: unknown
   try {
@@ -38,10 +41,8 @@ export async function restoreFromBackupJson(json: string): Promise<void> {
     throw new Error("This file isn't valid JSON.")
   }
 
-  const data = (parsed as { data?: Record<string, unknown[]> } | null)?.data
-  if (!data || typeof data !== 'object') {
-    throw new Error("This file doesn't look like a Blocks backup.")
-  }
+  // Migrate before anything touches the DB — a rejected file leaves existing data untouched.
+  const data = migrateBackupData(parsed)
 
   await db.transaction('rw', db.tables, async () => {
     for (const table of db.tables) {

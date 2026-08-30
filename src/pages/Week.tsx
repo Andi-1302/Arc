@@ -1,7 +1,8 @@
 import { useEffect, useRef, useState } from 'react'
 import { useLiveQuery } from 'dexie-react-hooks'
 import { db, type Area, type PlanEntry, type Routine } from '../db'
-import { addDays, isoWeekString, startOfIsoWeek, todayISO, weekdayMon0 } from '../lib/date'
+import { addDays, isoWeekString, startOfIsoWeek, weekdayMon0 } from '../lib/date'
+import { useToday } from '../lib/useToday'
 import { entriesForDate, layoutTimed, minutesToTime } from '../lib/planEntries'
 import { getCurrentBlock } from '../lib/prioritized'
 import { hexToRgba } from '../lib/color'
@@ -22,7 +23,7 @@ function nowMinutes(): number {
 
 export default function Week() {
   throwIfDevCrashRequested('week')
-  const today = todayISO()
+  const today = useToday()
   const weekStart = startOfIsoWeek(today)
   const days = Array.from({ length: 7 }, (_, i) => addDays(weekStart, i))
 

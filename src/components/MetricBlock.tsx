@@ -2,15 +2,16 @@ import { useState } from 'react'
 import { useLiveQuery } from 'dexie-react-hooks'
 import { LineChart, Line, BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer } from 'recharts'
 import { db, type Metric, type MetricEntry } from '../db'
-import { todayISO } from '../lib/date'
+import { useToday } from '../lib/useToday'
 import { aggregateWeekly } from '../lib/metrics'
 import { addMetricEntry, deleteMetricEntry, updateMetricEntry } from '../lib/actions'
 import EditMetricSheet from './EditMetricSheet'
 
 export default function MetricBlock({ metric }: { metric: Metric }) {
+  const today = useToday()
   const entries = useLiveQuery(() => db.entries.where('metricId').equals(metric.id).sortBy('date'), [metric.id])
   const [view, setView] = useState<'raw' | 'weekly'>('weekly')
-  const [date, setDate] = useState(todayISO())
+  const [date, setDate] = useState(today)
   const [value, setValue] = useState('')
   const [editingId, setEditingId] = useState<string | null>(null)
   const [editingMetric, setEditingMetric] = useState(false)

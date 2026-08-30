@@ -183,6 +183,8 @@ export interface Settings {
   dueCardsPerDay: number
   lastBackupAt?: string
   hideRoutineChecklist: boolean
+  /** Local hour (0–23) the day "ends" — a check-in before this hour after midnight is offered for the previous day. Not indexed; defaults to 4. */
+  dayCutoffHour?: number
 }
 
 export const SETTINGS_ID = 'settings'

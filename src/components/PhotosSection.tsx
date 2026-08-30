@@ -1,13 +1,14 @@
 import { useState } from 'react'
 import { useLiveQuery } from 'dexie-react-hooks'
 import { db, type Photo } from '../db'
-import { todayISO } from '../lib/date'
+import { useToday } from '../lib/useToday'
 import { compressImageToBlob } from '../lib/image'
 import { createPhoto } from '../lib/actions'
 import PhotoThumb from './PhotoThumb'
 import PhotoViewSheet from './PhotoViewSheet'
 
 export default function PhotosSection({ goalId }: { goalId: string }) {
+  const today = useToday()
   const photos = useLiveQuery(() => db.photos.where('goalId').equals(goalId).sortBy('date'), [goalId])
   const [viewing, setViewing] = useState<Photo | null>(null)
   const [uploading, setUploading] = useState(false)
@@ -19,7 +20,7 @@ export default function PhotosSection({ goalId }: { goalId: string }) {
     setUploading(true)
     try {
       const blob = await compressImageToBlob(file)
-      await createPhoto(goalId, blob, todayISO())
+      await createPhoto(goalId, blob, today)
     } finally {
       setUploading(false)
     }

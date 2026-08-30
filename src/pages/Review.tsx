@@ -2,12 +2,12 @@ import { useState } from 'react'
 import { Link } from 'react-router-dom'
 import { useLiveQuery } from 'dexie-react-hooks'
 import { db, SETTINGS_ID, type Card } from '../db'
-import { todayISO } from '../lib/date'
 import { buildReviewQueue, dueCards } from '../lib/cards'
+import { useToday } from '../lib/useToday'
 import CardReviewFlow from '../components/CardReviewFlow'
 
 export default function Review() {
-  const today = todayISO()
+  const today = useToday()
   const goals = useLiveQuery(() => db.goals.where('status').notEqual('archived').toArray())
   const cards = useLiveQuery(() => db.cards.toArray())
   const settings = useLiveQuery(() => db.settings.get(SETTINGS_ID))

@@ -1,12 +1,13 @@
 import { useState } from 'react'
 import { useLiveQuery } from 'dexie-react-hooks'
 import { db } from '../db'
-import { todayISO } from '../lib/date'
 import { todosForToday } from '../lib/todos'
+import { useToday } from '../lib/useToday'
 import { createTodo, toggleTodo } from '../lib/actions'
 
-export default function TodayTodos() {
-  const today = todayISO()
+export default function TodayTodos({ date }: { date: string }) {
+  const realToday = useToday()
+  const today = date
   const todos = useLiveQuery(() => db.todos.toArray())
   const [title, setTitle] = useState('')
   const [adding, setAdding] = useState(false)
@@ -14,7 +15,8 @@ export default function TodayTodos() {
   async function handleAdd() {
     if (!title.trim()) return
     setAdding(true)
-    await createTodo({ title: title.trim() })
+    // On a back-dated day, pin the new todo to that day so it belongs there; on today, leave it open-ended.
+    await createTodo({ title: title.trim(), dueDate: date === realToday ? undefined : date })
     setTitle('')
     setAdding(false)
   }

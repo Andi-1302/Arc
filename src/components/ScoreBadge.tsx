@@ -1,7 +1,7 @@
 import { useState } from 'react'
 import { useLiveQuery } from 'dexie-react-hooks'
 import { db } from '../db'
-import { todayISO } from '../lib/date'
+import { useToday } from '../lib/useToday'
 import { computeRoutineStrength } from '../lib/strength'
 import { getCurrentBlock, getPrioritizedGoalIds, getScoredRoutineIds } from '../lib/prioritized'
 import { dueCards } from '../lib/cards'
@@ -11,7 +11,7 @@ import { throwIfDevCrashRequested } from '../lib/devCrash'
 export default function ScoreBadge() {
   throwIfDevCrashRequested('badge')
   const [open, setOpen] = useState(false)
-  const today = todayISO()
+  const today = useToday()
 
   const routines = useLiveQuery(() => db.routines.toArray())
   const checks = useLiveQuery(() => db.routineChecks.toArray())

@@ -1,12 +1,13 @@
 import { useEffect, useState } from 'react'
 import { useLiveQuery } from 'dexie-react-hooks'
 import { db } from '../db'
-import { addDays, todayISO, weekdayMon0 } from '../lib/date'
+import { addDays, weekdayMon0 } from '../lib/date'
 import { entriesForDate, sortChecklist } from '../lib/planEntries'
 import { saveDayLog } from '../lib/actions'
 
-export default function TomorrowPreview() {
-  const tomorrow = addDays(todayISO(), 1)
+export default function TomorrowPreview({ date }: { date: string }) {
+  // Follows the Today navigator's selected day: the "tomorrow" being previewed is the day after it.
+  const tomorrow = addDays(date, 1)
   const tomorrowWeekday = weekdayMon0(tomorrow)
 
   const routines = useLiveQuery(

@@ -1,11 +1,11 @@
 import { useEffect, useState } from 'react'
 import { useLiveQuery } from 'dexie-react-hooks'
 import { db, SETTINGS_ID } from '../db'
-import { todayISO } from '../lib/date'
 import { saveDailyRating, saveDayLog } from '../lib/actions'
 
-export default function DailyCheckIn() {
-  const today = todayISO()
+export default function DailyCheckIn({ date }: { date: string }) {
+  // `date` is the day being filled in — today, or a back-dated day from the Today navigator.
+  const today = date
   const settings = useLiveQuery(() => db.settings.get(SETTINGS_ID))
   const dayLog = useLiveQuery(() => db.dayLogs.get(today), [today])
 

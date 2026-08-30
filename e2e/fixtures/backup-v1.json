@@ -1,0 +1,44 @@
+{
+  "version": 1,
+  "exportedAt": "2026-07-26T08:15:00.000Z",
+  "data": {
+    "areas": [
+      { "id": "area-legacy-1", "name": "Legacy Sport", "color": "#D9481F", "sortOrder": 0 }
+    ],
+    "goals": [
+      {
+        "id": "goal-legacy-1",
+        "areaId": "area-legacy-1",
+        "name": "Legacy Marathon Goal",
+        "modules": ["metrics", "routines"],
+        "status": "active",
+        "createdAt": "2026-07-01T07:00:00.000Z"
+      }
+    ],
+    "routines": [
+      {
+        "id": "routine-legacy-1",
+        "name": "Legacy long run",
+        "goalIds": ["goal-legacy-1"],
+        "schedule": [5],
+        "quickMetricIds": [],
+        "active": true
+      }
+    ],
+    "routineChecks": [
+      { "id": "check-legacy-1", "routineId": "routine-legacy-1", "date": "2026-07-25", "done": true }
+    ],
+    "dayLogs": [
+      { "date": "2026-07-25", "rating": 7, "note": "Legacy backup day" }
+    ],
+    "settings": [
+      {
+        "id": "settings",
+        "dailyQuestion": "How was your day?",
+        "newCardsPerDay": 10,
+        "dueCardsPerDay": 30,
+        "hideRoutineChecklist": false
+      }
+    ]
+  }
+}
