@@ -4,12 +4,15 @@ import {
   type Card,
   type Goal,
   type Metric,
+  type MetricEntry,
+  type MetricField,
   type Module,
   type PlanRecurrence,
   type Routine,
   type Settings,
 } from '../db'
 import { todayISO } from './date'
+import { primaryValue } from './metrics'
 import { routinesLosingPriority } from './block'
 import { applyGrade } from './sm2'
 import { buildBackupJson, restoreFromBackupJson } from './backup'
@@ -27,11 +30,52 @@ export async function toggleRoutineCheck(routineId: string, date: string) {
 }
 
 export async function addMetricEntry(metricId: string, date: string, value: number, note?: string) {
-  await db.entries.add({ id: uid(), metricId, date, value, note })
+  const metric = await db.metrics.get(metricId)
+  const row: Omit<MetricEntry, 'id'> = { metricId, date, value, note }
+  // Single-number path (quick entry, weekly review) against a multi-field metric:
+  // treat the number as the primary field so `values` stays consistent with `value`.
+  if (metric?.fields?.length && metric.primaryFieldId) {
+    row.values = { [metric.primaryFieldId]: value }
+  }
+  await db.entries.add({ id: uid(), ...row })
+}
+
+/** Multi-field write: fills `values` for the fields given and mirrors the primary field into `value` (db.ts rule). */
+export async function addMetricFieldEntry(
+  metricId: string,
+  date: string,
+  values: Record<string, number>,
+  note?: string,
+) {
+  const metric = await db.metrics.get(metricId)
+  await db.entries.add({
+    id: uid(),
+    metricId,
+    date,
+    values,
+    value: primaryValue(values, metric?.primaryFieldId),
+    note,
+  })
 }
 
 export async function updateMetricEntry(id: string, patch: { date: string; value: number; note?: string }) {
   await db.entries.update(id, patch)
+}
+
+/** Multi-field edit: replaces `values` and re-mirrors the primary field into `value` (db.ts rule). */
+export async function updateMetricFieldEntry(
+  id: string,
+  patch: { date: string; values: Record<string, number>; note?: string },
+) {
+  const entry = await db.entries.get(id)
+  if (!entry) return
+  const metric = await db.metrics.get(entry.metricId)
+  await db.entries.update(id, {
+    date: patch.date,
+    values: patch.values,
+    value: primaryValue(patch.values, metric?.primaryFieldId),
+    note: patch.note,
+  })
 }
 
 export async function deleteMetricEntry(id: string) {
@@ -110,6 +154,33 @@ export async function createMetric(input: Omit<Metric, 'id'>) {
 
 export async function updateMetric(id: string, patch: Partial<Omit<Metric, 'id' | 'goalId'>>) {
   await db.metrics.update(id, patch)
+}
+
+/**
+ * Sets a metric's field list (from Add/Edit metric). When a legacy single-value
+ * metric first gains fields, its existing entries are backfilled so the primary
+ * field mirrors their `value` — keeping the chart history intact. Any field added
+ * later still has no value on those older entries (rendered as an em dash).
+ */
+export async function setMetricFields(
+  id: string,
+  fields: MetricField[],
+  primaryFieldId: string,
+  comparison: Metric['comparison'],
+) {
+  const metric = await db.metrics.get(id)
+  const wasLegacy = !metric?.fields?.length
+  const primaryUnit = fields.find((f) => f.id === primaryFieldId)?.unit ?? metric?.unit ?? ''
+  await db.metrics.update(id, { fields, primaryFieldId, comparison, unit: primaryUnit })
+
+  if (wasLegacy) {
+    const entries = await db.entries.where('metricId').equals(id).toArray()
+    for (const entry of entries) {
+      if (entry.values?.[primaryFieldId] === undefined) {
+        await db.entries.update(entry.id, { values: { ...(entry.values ?? {}), [primaryFieldId]: entry.value } })
+      }
+    }
+  }
 }
 
 export async function deleteMetric(id: string) {

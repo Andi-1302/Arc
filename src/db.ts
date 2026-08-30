@@ -29,6 +29,12 @@ export interface Goal {
   createdAt: string
 }
 
+export interface MetricField {
+  id: string
+  label: string
+  unit: string
+}
+
 export interface Metric {
   id: string
   goalId: string | null
@@ -38,6 +44,10 @@ export interface Metric {
   aggregation: 'sum' | 'max' | 'last' | 'avg'
   showOnDashboard: boolean
   target?: number
+  // --- multi-field metrics (all non-indexed, no schema version bump) ---
+  fields?: MetricField[]
+  primaryFieldId?: string
+  comparison?: 'none' | 'leftRight'
 }
 
 export interface MetricEntry {
@@ -46,7 +56,23 @@ export interface MetricEntry {
   date: string
   value: number
   note?: string
+  values?: Record<string, number>
 }
+
+/**
+ * Multi-field metric compatibility rule — follow this everywhere:
+ *
+ * A metric whose `fields` is undefined is a LEGACY single-value metric and behaves
+ * exactly as it always has — reads and writes touch only `MetricEntry.value`.
+ *
+ * When `fields` is set, every write fills `values` for its fields AND mirrors
+ * `values[primaryFieldId]` into the existing `value` property. That mirror is what
+ * keeps `aggregateWeekly`, the Stats dashboard, `Sparkline` and every existing
+ * chart working with no changes — they only ever read `value`.
+ *
+ * Entries written before a field existed simply have no key for it in `values`;
+ * render that as an em dash, never as 0.
+ */
 
 export interface Milestone {
   id: string
