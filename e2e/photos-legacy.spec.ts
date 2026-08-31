@@ -15,10 +15,12 @@ test('a photo with no pose still renders and can be sorted', async ({ page }) =>
   await page
     .locator('input[type="file"]')
     .setInputFiles({ name: 'progress.png', mimeType: 'image/png', buffer: PNG })
+  await expect(page.locator('img').first()).toBeVisible()
 
   // It renders on the goal's Photos section, grouped as Unsorted.
   await page.getByRole('link', { name: 'Goals' }).click()
-  await page.getByText('Posture & left arm').click()
+  await expect(page.getByRole('heading', { name: 'Goals', exact: true })).toBeVisible()
+  await page.getByRole('button', { name: /Posture & left arm/ }).click()
   await expect(page.getByRole('heading', { name: 'Photos' })).toBeVisible()
 
   await expect(page.getByRole('button', { name: 'Unsorted (1)' })).toBeVisible()

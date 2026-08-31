@@ -13,7 +13,13 @@ import {
 } from 'recharts'
 import { db, type Metric, type MetricEntry, type MetricField } from '../db'
 import { useToday } from '../lib/useToday'
-import { aggregateWeekly, aggregateWeeklyByField, imbalancePercent, imbalanceSeries } from '../lib/metrics'
+import {
+  aggregateWeekly,
+  aggregateWeeklyByField,
+  imbalancePercent,
+  imbalanceSeries,
+  metricDashboardMode,
+} from '../lib/metrics'
 import {
   addMetricEntry,
   addMetricFieldEntry,
@@ -60,10 +66,10 @@ function MetricHeader({
     <div className="flex items-baseline justify-between gap-2">
       <h3 className="min-w-0 truncate text-sm font-medium">
         {metric.name} <span className="opacity-50">({subtitle})</span>
-        {metric.showOnDashboard && (
+        {metricDashboardMode(metric) === 'always' && (
           <span
             className="ml-1.5 inline-block h-1.5 w-1.5 rounded-full bg-accent align-middle"
-            title="Shown on Stats dashboard"
+            title="Always shown on Stats dashboard"
           />
         )}
       </h3>

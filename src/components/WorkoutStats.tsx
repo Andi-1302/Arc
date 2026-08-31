@@ -1,38 +1,64 @@
+import { useState } from 'react'
 import { useLiveQuery } from 'dexie-react-hooks'
 import { BarChart, Bar, LineChart, Line, XAxis, YAxis, Tooltip, ResponsiveContainer } from 'recharts'
 import { db, type WorkoutSession } from '../db'
-import { exerciseNamesForGoal, exerciseSeries, exerciseWeeklyVolume, isPerSideExercise } from '../lib/workouts'
+import { formatDayLabel } from '../lib/date'
+import { exerciseSeries, exerciseWeeklyVolume, exercisesByRecency, isPerSideExercise } from '../lib/workouts'
+import AreaFilterChips, { type AreaFilterValue } from './AreaFilterChips'
 
 export default function WorkoutStats() {
-  const goals = useLiveQuery(() => db.goals.where('status').notEqual('archived').toArray())
+  const goals = useLiveQuery(() => db.goals.toArray())
+  const areas = useLiveQuery(() => db.areas.orderBy('sortOrder').toArray())
   const sessions = useLiveQuery(() => db.workoutSessions.toArray())
 
-  if (!goals || !sessions) return null
+  const [areaFilter, setAreaFilter] = useState<AreaFilterValue>('all')
+  const [selected, setSelected] = useState<string | null>(null)
 
-  const workoutGoals = goals.filter(
-    (g) => g.modules.includes('workouts') && sessions.some((s) => s.goalId === g.id),
-  )
+  if (!goals || !areas || !sessions) return null
 
-  if (workoutGoals.length === 0) {
+  if (sessions.length === 0) {
     return <p className="text-sm opacity-60">No workout sessions logged yet.</p>
   }
 
+  const areaOf = new Map(goals.map((g) => [g.id, g.areaId]))
+  const filtered = sessions.filter((s) => {
+    if (areaFilter === 'all') return true
+    if (areaFilter === 'global') return false
+    return s.goalId !== undefined && areaOf.get(s.goalId) === areaFilter
+  })
+
+  const exercises = exercisesByRecency(filtered)
+  const activeName = exercises.find((e) => e.name === selected)?.name ?? exercises[0]?.name
+
   return (
-    <div className="space-y-5">
-      {workoutGoals.map((goal) => {
-        const goalSessions = sessions.filter((s) => s.goalId === goal.id)
-        const names = exerciseNamesForGoal(sessions, goal.id)
-        return (
-          <div key={goal.id}>
-            <h3 className="text-sm font-semibold">{goal.name}</h3>
-            <div className="mt-2 space-y-4">
-              {names.map((name) => (
-                <ExerciseCharts key={name} name={name} sessions={goalSessions} />
-              ))}
-            </div>
+    <div>
+      <AreaFilterChips areas={areas} value={areaFilter} onChange={setAreaFilter} includeGlobal={false} />
+
+      {exercises.length === 0 ? (
+        <p className="mt-3 text-sm opacity-60">No exercises logged for this filter.</p>
+      ) : (
+        <>
+          <div className="mt-2 flex flex-wrap gap-1.5">
+            {exercises.map((ex) => (
+              <button
+                key={ex.name}
+                type="button"
+                onClick={() => setSelected(ex.name)}
+                className={`shrink-0 rounded-full border px-2.5 py-1 text-xs font-medium ${
+                  ex.name === activeName ? 'border-accent bg-accent/5 text-accent' : 'border-black/10 opacity-70'
+                }`}
+              >
+                {ex.name} <span className="opacity-50">· {formatDayLabel(ex.lastDate)}</span>
+              </button>
+            ))}
           </div>
-        )
-      })}
+          {activeName && (
+            <div className="mt-3">
+              <ExerciseCharts key={activeName} name={activeName} sessions={filtered} />
+            </div>
+          )}
+        </>
+      )}
     </div>
   )
 }

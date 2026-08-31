@@ -78,17 +78,20 @@ export function exerciseWeeklyVolume(sessions: WorkoutSession[], exerciseName: s
   return [...byWeek.entries()].sort(([a], [b]) => a.localeCompare(b)).map(([week, volume]) => ({ week, volume }))
 }
 
-/** Distinct exercise names logged for a goal, in first-seen order. */
-export function exerciseNamesForGoal(sessions: WorkoutSession[], goalId: string): string[] {
-  const seen = new Map<string, string>()
-  for (const session of [...sessions].sort((a, b) => a.date.localeCompare(b.date))) {
-    if (session.goalId !== goalId) continue
+/** Distinct exercises across the given sessions with the date each was last logged, most recent first. */
+export function exercisesByRecency(sessions: WorkoutSession[]): { name: string; lastDate: string }[] {
+  const byName = new Map<string, { name: string; lastDate: string }>()
+  for (const session of sessions) {
     for (const set of session.sets) {
       const key = norm(set.exerciseName)
-      if (!seen.has(key)) seen.set(key, set.exerciseName)
+      const existing = byName.get(key)
+      if (!existing) byName.set(key, { name: set.exerciseName, lastDate: session.date })
+      else if (session.date > existing.lastDate) existing.lastDate = session.date
     }
   }
-  return [...seen.values()]
+  return [...byName.values()].sort(
+    (a, b) => b.lastDate.localeCompare(a.lastDate) || a.name.localeCompare(b.name),
+  )
 }
 
 /** One-line human summary of a logged session, e.g. "Bench · 3×8 · 60 kg  +  Row · 3×10". */

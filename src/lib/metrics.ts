@@ -1,5 +1,38 @@
 import type { Metric, MetricEntry, MetricField } from '../db'
-import { startOfIsoWeek } from './date'
+import { daysBetween, startOfIsoWeek } from './date'
+
+/**
+ * Effective dashboard mode. `showOnDashboard` is the legacy boolean kept for
+ * backwards compatibility — read the mode as: dashboardMode ?? (showOnDashboard ? 'always' : 'auto').
+ */
+export function metricDashboardMode(
+  metric: Pick<Metric, 'dashboardMode' | 'showOnDashboard'>,
+): 'auto' | 'always' | 'never' {
+  return metric.dashboardMode ?? (metric.showOnDashboard ? 'always' : 'auto')
+}
+
+/**
+ * Whether a metric shows on the Stats dashboard by default:
+ * - 'always' → yes, regardless of the goal
+ * - 'never'  → no
+ * - 'auto'   → only when the metric is global (no goal) or its goal is the current
+ *              block's focus / secondary goal
+ */
+export function isMetricOnDashboard(
+  metric: Pick<Metric, 'goalId' | 'dashboardMode' | 'showOnDashboard'>,
+  prioritizedGoalIds: string[],
+): boolean {
+  const mode = metricDashboardMode(metric)
+  if (mode === 'always') return true
+  if (mode === 'never') return false
+  return metric.goalId === null || prioritizedGoalIds.includes(metric.goalId)
+}
+
+/** Dormant = no activity in the last `weeks` weeks (or never). Used to fold stale items away in Stats. */
+export function isDormant(lastActivity: string | null | undefined, today: string, weeks = 8): boolean {
+  if (!lastActivity) return true
+  return daysBetween(lastActivity, today) > weeks * 7
+}
 
 export interface WeeklyPoint {
   week: string

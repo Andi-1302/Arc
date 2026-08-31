@@ -2,6 +2,7 @@ import { useState } from 'react'
 import { createPortal } from 'react-dom'
 import type { Metric } from '../db'
 import { deleteMetric, setMetricFields, updateMetric } from '../lib/actions'
+import { metricDashboardMode } from '../lib/metrics'
 
 const uid = () => crypto.randomUUID()
 
@@ -17,7 +18,7 @@ export default function EditMetricSheet({ metric, onClose }: { metric: Metric; o
   const [direction, setDirection] = useState<Metric['direction']>(metric.direction)
   const [aggregation, setAggregation] = useState<Metric['aggregation']>(metric.aggregation)
   const [target, setTarget] = useState(metric.target !== undefined ? String(metric.target) : '')
-  const [showOnDashboard, setShowOnDashboard] = useState(metric.showOnDashboard)
+  const [dashboardMode, setDashboardMode] = useState<Metric['dashboardMode']>(metricDashboardMode(metric))
   const [saving, setSaving] = useState(false)
 
   const [fieldDrafts, setFieldDrafts] = useState<DraftField[]>(() =>
@@ -58,7 +59,7 @@ export default function EditMetricSheet({ metric, onClose }: { metric: Metric; o
       direction,
       aggregation,
       target: target ? Number(target) : undefined,
-      showOnDashboard,
+      dashboardMode,
       ...(hasFields ? {} : { unit: unit.trim() }),
     })
     if (hasFields) {
@@ -146,13 +147,17 @@ export default function EditMetricSheet({ metric, onClose }: { metric: Metric; o
               className="mt-1 w-full rounded-lg border border-black/10 px-3 py-2"
             />
           </label>
-          <label className="flex items-center gap-2 text-sm">
-            <input
-              type="checkbox"
-              checked={showOnDashboard}
-              onChange={(e) => setShowOnDashboard(e.target.checked)}
-            />
-            Show on Stats dashboard
+          <label className="block text-sm">
+            Stats dashboard
+            <select
+              value={dashboardMode}
+              onChange={(e) => setDashboardMode(e.target.value as Metric['dashboardMode'])}
+              className="mt-1 w-full rounded-lg border border-black/10 px-3 py-2"
+            >
+              <option value="auto">Auto — show while the goal is prioritised</option>
+              <option value="always">Always show</option>
+              <option value="never">Never show</option>
+            </select>
           </label>
 
           <div className="border-t border-black/5 pt-3">

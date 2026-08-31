@@ -43,7 +43,10 @@ export interface Metric {
   unit: string
   direction: 'increase' | 'decrease'
   aggregation: 'sum' | 'max' | 'last' | 'avg'
-  showOnDashboard: boolean
+  /** Legacy boolean, kept for backwards compatibility. Read the effective setting via metricDashboardMode(). */
+  showOnDashboard?: boolean
+  /** 'auto' shows only when the goal is prioritised; 'always'/'never' are explicit. Non-indexed. */
+  dashboardMode?: 'auto' | 'always' | 'never'
   target?: number
   // --- multi-field metrics (all non-indexed, no schema version bump) ---
   fields?: MetricField[]

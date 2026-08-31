@@ -151,7 +151,7 @@ function SingleForm({ goalId, onBack, onClose }: { goalId: string; onBack: () =>
       unit: unit.trim(),
       direction,
       aggregation,
-      showOnDashboard,
+      dashboardMode: showOnDashboard ? 'always' : undefined,
       target: target ? Number(target) : undefined,
     })
     onClose()
@@ -219,7 +219,7 @@ function SingleForm({ goalId, onBack, onClose }: { goalId: string; onBack: () =>
         </label>
         <label className="flex items-center gap-2 text-sm">
           <input type="checkbox" checked={showOnDashboard} onChange={(e) => setShowOnDashboard(e.target.checked)} />
-          Show on Stats dashboard
+          Always show on Stats dashboard
         </label>
       </div>
       <SaveRow onClose={onClose} onSave={handleSave} disabled={!name.trim() || !unit.trim()} />
@@ -247,7 +247,7 @@ function LeftRightForm({ goalId, onBack, onClose }: { goalId: string; onBack: ()
       unit: u,
       direction,
       aggregation,
-      showOnDashboard,
+      dashboardMode: showOnDashboard ? 'always' : undefined,
       fields: [left, right],
       primaryFieldId: left.id,
       comparison: 'leftRight',
@@ -287,7 +287,7 @@ function LeftRightForm({ goalId, onBack, onClose }: { goalId: string; onBack: ()
         </p>
         <label className="flex items-center gap-2 text-sm">
           <input type="checkbox" checked={showOnDashboard} onChange={(e) => setShowOnDashboard(e.target.checked)} />
-          Show on Stats dashboard
+          Always show on Stats dashboard
         </label>
       </div>
       <SaveRow onClose={onClose} onSave={handleSave} disabled={!name.trim() || !unit.trim()} />
@@ -341,7 +341,7 @@ function MultiForm({ goalId, onBack, onClose }: { goalId: string; onBack: () => 
       unit: primary.unit,
       direction,
       aggregation,
-      showOnDashboard,
+      dashboardMode: showOnDashboard ? 'always' : undefined,
       fields,
       primaryFieldId: primary.id,
       comparison: 'none',
@@ -408,7 +408,7 @@ function MultiForm({ goalId, onBack, onClose }: { goalId: string; onBack: () => 
         />
         <label className="flex items-center gap-2 text-sm">
           <input type="checkbox" checked={showOnDashboard} onChange={(e) => setShowOnDashboard(e.target.checked)} />
-          Show on Stats dashboard
+          Always show on Stats dashboard
         </label>
       </div>
       <SaveRow onClose={onClose} onSave={handleSave} disabled={!ready} />
