@@ -16,6 +16,7 @@ import {
 } from '../db'
 import { todayISO } from './date'
 import { primaryValue } from './metrics'
+import { buildDemoPlan, demoDataConflicts } from './demoData'
 import { routinesLosingPriority } from './block'
 import { applyGrade } from './sm2'
 import { buildBackupJson, restoreFromBackupJson } from './backup'
@@ -494,6 +495,40 @@ export async function updateWorkoutSession(
 
 export async function deleteWorkoutSession(id: string) {
   await db.workoutSessions.delete(id)
+}
+
+/**
+ * Dev-only: fill the seeded metrics / routines / day logs / workout template with
+ * ~10 weeks of plausible history. Idempotent — refuses (and says so) if any of the
+ * rows it would create already exist.
+ */
+export async function loadDemoData(): Promise<void> {
+  const [metrics, routines, templates, entries, routineChecks, dayLogs, sessions] = await Promise.all([
+    db.metrics.toArray(),
+    db.routines.toArray(),
+    db.workoutTemplates.toArray(),
+    db.entries.toArray(),
+    db.routineChecks.toArray(),
+    db.dayLogs.toArray(),
+    db.workoutSessions.toArray(),
+  ])
+
+  const template = templates.find((t) => !t.archived)
+  const plan = buildDemoPlan({ today: todayISO(), metrics, routines, template })
+
+  const conflicts = demoDataConflicts(plan, { entries, routineChecks, dayLogs, sessions })
+  if (conflicts.length > 0) {
+    const summary = conflicts.map((c) => `${c.count} ${c.table}`).join(', ')
+    throw new Error(`Demo data looks already loaded — found ${summary} it would have created. Nothing was added.`)
+  }
+
+  await db.transaction('rw', [db.entries, db.routineChecks, db.dayLogs, db.workoutSessions], async () => {
+    await db.entries.bulkAdd(plan.entries.map((e) => ({ id: uid(), ...e })))
+    await db.routineChecks.bulkAdd(plan.routineChecks.map((c) => ({ id: uid(), ...c })))
+    await db.dayLogs.bulkAdd(plan.dayLogs)
+    const now = new Date().toISOString()
+    await db.workoutSessions.bulkAdd(plan.sessions.map((s) => ({ id: uid(), createdAt: now, ...s })))
+  })
 }
 
 export async function saveDailyRating(date: string, rating: number) {

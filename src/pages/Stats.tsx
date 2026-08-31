@@ -1,4 +1,5 @@
 import type { ReactNode } from 'react'
+import GeneralMetricsSection from '../components/GeneralMetricsSection'
 import MetricDashboard from '../components/MetricDashboard'
 import ConsistencyHeatmap from '../components/ConsistencyHeatmap'
 import PhotosDashboard from '../components/PhotosDashboard'
@@ -42,6 +43,10 @@ export default function Stats() {
   return (
     <div className="pb-8">
       <h1 className="px-4 pt-4 font-display text-3xl font-semibold">Stats</h1>
+
+      <Section id="general" title="General metrics" subtitle="Metrics not tied to a goal — log entries here.">
+        <GeneralMetricsSection />
+      </Section>
 
       <Section id="dashboard" title="Dashboard">
         <MetricDashboard />

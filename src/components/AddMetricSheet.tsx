@@ -14,7 +14,7 @@ const KINDS: { key: Kind; label: string; hint: string }[] = [
 
 const uid = () => crypto.randomUUID()
 
-export default function AddMetricSheet({ goalId, onClose }: { goalId: string; onClose: () => void }) {
+export default function AddMetricSheet({ goalId, onClose }: { goalId: string | null; onClose: () => void }) {
   const [kind, setKind] = useState<Kind | null>(null)
 
   return createPortal(
@@ -124,7 +124,7 @@ function SaveRow({ onClose, onSave, disabled }: { onClose: () => void; onSave: (
 
 /* -------------------- Single value (unchanged behaviour) -------------------- */
 
-function SingleForm({ goalId, onBack, onClose }: { goalId: string; onBack: () => void; onClose: () => void }) {
+function SingleForm({ goalId, onBack, onClose }: { goalId: string | null; onBack: () => void; onClose: () => void }) {
   const [templateKey, setTemplateKey] = useState<string | null>(null)
   const [name, setName] = useState('')
   const [unit, setUnit] = useState('')
@@ -229,7 +229,7 @@ function SingleForm({ goalId, onBack, onClose }: { goalId: string; onBack: () =>
 
 /* -------------------- Left / right -------------------- */
 
-function LeftRightForm({ goalId, onBack, onClose }: { goalId: string; onBack: () => void; onClose: () => void }) {
+function LeftRightForm({ goalId, onBack, onClose }: { goalId: string | null; onBack: () => void; onClose: () => void }) {
   const [name, setName] = useState('')
   const [unit, setUnit] = useState('')
   const [direction, setDirection] = useState<Metric['direction']>('decrease')
@@ -304,7 +304,7 @@ interface DraftField {
   unit: string
 }
 
-function MultiForm({ goalId, onBack, onClose }: { goalId: string; onBack: () => void; onClose: () => void }) {
+function MultiForm({ goalId, onBack, onClose }: { goalId: string | null; onBack: () => void; onClose: () => void }) {
   const [name, setName] = useState('')
   const [direction, setDirection] = useState<Metric['direction']>('increase')
   const [aggregation, setAggregation] = useState<Metric['aggregation']>('sum')

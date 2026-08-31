@@ -44,7 +44,7 @@ export function seedInitialData(db: BlocksDB) {
       id: goalStrength,
       areaId: areaSport,
       name: 'Strength & muscle',
-      modules: ['metrics', 'routines'],
+      modules: ['metrics', 'routines', 'workouts'],
       status: 'active',
       createdAt,
     },
@@ -145,6 +145,20 @@ export function seedInitialData(db: BlocksDB) {
       createdAt,
     },
   ])
+
+  db.workoutTemplates.add({
+    id: uid(),
+    name: 'Strength A',
+    goalId: goalStrength,
+    archived: false,
+    createdAt,
+    exercises: [
+      { id: uid(), name: 'Back squat', targetSets: 3, targetReps: 5, targetWeight: 90, perSide: false, sortOrder: 0 },
+      { id: uid(), name: 'Bench press', targetSets: 3, targetReps: 5, targetWeight: 65, perSide: false, sortOrder: 1 },
+      { id: uid(), name: 'Barbell row', targetSets: 3, targetReps: 8, targetWeight: 55, perSide: false, sortOrder: 2 },
+      { id: uid(), name: 'Single-arm DB press', targetSets: 3, targetReps: 8, targetWeight: 18, perSide: true, sortOrder: 3 },
+    ],
+  })
 
   db.blocks.bulkAdd([
     {

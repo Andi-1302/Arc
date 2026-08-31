@@ -9,6 +9,9 @@ const base = '/Arc/'
 
 export default defineConfig({
   base,
+  // Pin the port: a fallback port is a different browser origin, which opens a
+  // fresh empty IndexedDB and looks like the app lost all its data. Fail loudly instead.
+  server: { port: 5173, strictPort: true },
   define: {
     __APP_VERSION__: JSON.stringify(pkg.version),
   },

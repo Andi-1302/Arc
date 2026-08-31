@@ -2,7 +2,7 @@ import { useEffect, useRef, useState } from 'react'
 import { Link } from 'react-router-dom'
 import { useLiveQuery } from 'dexie-react-hooks'
 import { db, SETTINGS_ID } from '../db'
-import { exportBackup, importBackup, updateSettings } from '../lib/actions'
+import { exportBackup, importBackup, loadDemoData, updateSettings } from '../lib/actions'
 
 export default function Settings() {
   const settings = useLiveQuery(() => db.settings.get(SETTINGS_ID))
@@ -14,6 +14,8 @@ export default function Settings() {
   const [cutoffHour, setCutoffHour] = useState('')
   const [exporting, setExporting] = useState(false)
   const [importing, setImporting] = useState(false)
+  const [demoBusy, setDemoBusy] = useState(false)
+  const [demoMessage, setDemoMessage] = useState<string | null>(null)
 
   useEffect(() => {
     if (!settings) return
@@ -83,6 +85,19 @@ export default function Settings() {
       window.alert(err instanceof Error ? err.message : 'Import failed.')
     } finally {
       setImporting(false)
+    }
+  }
+
+  async function handleLoadDemo() {
+    setDemoBusy(true)
+    setDemoMessage(null)
+    try {
+      await loadDemoData()
+      setDemoMessage('Demo data loaded.')
+    } catch (err) {
+      setDemoMessage(err instanceof Error ? err.message : 'Could not load demo data.')
+    } finally {
+      setDemoBusy(false)
     }
   }
 
@@ -202,6 +217,24 @@ export default function Settings() {
           />
         </label>
       </section>
+
+      {import.meta.env.DEV && (
+        <section className="mt-6 px-4">
+          <h2 className="font-display text-lg font-semibold">Development</h2>
+          <p className="mt-1 text-xs opacity-60">
+            Development only — this section is not built into the deployed app.
+          </p>
+          <button
+            type="button"
+            onClick={handleLoadDemo}
+            disabled={demoBusy}
+            className="mt-2 w-full rounded-lg border border-warning/40 py-2.5 text-sm font-medium text-warning disabled:opacity-50"
+          >
+            {demoBusy ? 'Loading…' : 'Load demo data (~10 weeks of history)'}
+          </button>
+          {demoMessage && <p className="mt-2 text-xs opacity-80">{demoMessage}</p>}
+        </section>
+      )}
 
       <p className="mt-6 px-4 text-xs opacity-50">Blocks v{__APP_VERSION__}</p>
     </div>
