@@ -1,7 +1,7 @@
 import { useState } from 'react'
 import { createPortal } from 'react-dom'
 import { useLiveQuery } from 'dexie-react-hooks'
-import { db, type Goal, type Metric, type Routine } from '../db'
+import { db, type Goal, type Metric, type Routine, type WorkoutTemplate } from '../db'
 import { WEEKDAY_LABELS } from '../lib/date'
 import { createRoutine, deleteRoutine, updateRoutine } from '../lib/actions'
 
@@ -18,6 +18,7 @@ export default function RoutineFormSheet({
   const [schedule, setSchedule] = useState<number[]>(routine?.schedule ?? [0, 1, 2, 3, 4, 5, 6])
   const [goalIds, setGoalIds] = useState<string[]>(routine?.goalIds ?? [])
   const [quickMetricIds, setQuickMetricIds] = useState<string[]>(routine?.quickMetricIds ?? [])
+  const [workoutTemplateId, setWorkoutTemplateId] = useState<string>(routine?.workoutTemplateId ?? '')
   const [saving, setSaving] = useState(false)
 
   const metrics = useLiveQuery(
@@ -25,6 +26,14 @@ export default function RoutineFormSheet({
       goalIds.length > 0 ? db.metrics.where('goalId').anyOf(goalIds).toArray() : Promise.resolve<Metric[]>([]),
     [goalIds],
   )
+  const templates = useLiveQuery(
+    () =>
+      goalIds.length > 0
+        ? db.workoutTemplates.where('goalId').anyOf(goalIds).toArray()
+        : Promise.resolve<WorkoutTemplate[]>([]),
+    [goalIds],
+  )
+  const activeTemplates = (templates ?? []).filter((t) => !t.archived || t.id === workoutTemplateId)
 
   function toggleDay(day: number) {
     setSchedule((s) => (s.includes(day) ? s.filter((d) => d !== day) : [...s, day].sort((a, b) => a - b)))
@@ -46,6 +55,10 @@ export default function RoutineFormSheet({
       schedule,
       goalIds,
       quickMetricIds: quickMetricIds.filter((id) => metrics?.some((m) => m.id === id)),
+      workoutTemplateId:
+        workoutTemplateId && activeTemplates.some((t) => t.id === workoutTemplateId)
+          ? workoutTemplateId
+          : undefined,
     }
     if (routine) {
       await updateRoutine(routine.id, patch)
@@ -146,6 +159,31 @@ export default function RoutineFormSheet({
                 ))}
               </div>
             )}
+          </div>
+
+          <div>
+            <p className="text-sm opacity-70">Workout template (optional)</p>
+            {goalIds.length === 0 ? (
+              <p className="mt-2 text-sm opacity-50">Link a goal with the workouts module to pick a template.</p>
+            ) : activeTemplates.length === 0 ? (
+              <p className="mt-2 text-sm opacity-50">Linked goals have no workout templates yet.</p>
+            ) : (
+              <select
+                value={workoutTemplateId}
+                onChange={(e) => setWorkoutTemplateId(e.target.value)}
+                className="mt-2 w-full rounded-lg border border-black/10 px-3 py-2 text-sm"
+              >
+                <option value="">None — just a check-off</option>
+                {activeTemplates.map((t) => (
+                  <option key={t.id} value={t.id}>
+                    {t.name}
+                  </option>
+                ))}
+              </select>
+            )}
+            <p className="mt-1 text-xs opacity-50">
+              With a template, tapping this routine on Today opens the workout logger.
+            </p>
           </div>
         </div>
 

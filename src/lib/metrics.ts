@@ -19,6 +19,16 @@ export interface ImbalancePoint {
 }
 
 /**
+ * Imbalance between two sides as a percentage of the larger side:
+ * |a − b| / max(|a|, |b|) × 100. The single source of this formula — reused by
+ * left/right metrics and by per-side workout exercises.
+ */
+export function imbalancePercent(a: number, b: number): number {
+  const larger = Math.max(Math.abs(a), Math.abs(b))
+  return larger === 0 ? 0 : (Math.abs(a - b) / larger) * 100
+}
+
+/**
  * Compatibility rule (db.ts): the number stored in `MetricEntry.value` for a
  * multi-field metric is a mirror of the primary field. Given a per-field map and
  * the primary field id, this returns that mirror value.
@@ -95,9 +105,7 @@ export function imbalanceSeries(
     const left = entry.values?.[leftFieldId]
     const right = entry.values?.[rightFieldId]
     if (left === undefined || right === undefined) continue
-    const larger = Math.max(Math.abs(left), Math.abs(right))
-    const gap = larger === 0 ? 0 : (Math.abs(left - right) / larger) * 100
-    series.push({ date: entry.date, gap })
+    series.push({ date: entry.date, gap: imbalancePercent(left, right) })
   }
   return series
 }

@@ -1,6 +1,7 @@
 import MetricDashboard from '../components/MetricDashboard'
 import ConsistencyHeatmap from '../components/ConsistencyHeatmap'
 import PhotosDashboard from '../components/PhotosDashboard'
+import WorkoutStats from '../components/WorkoutStats'
 
 export default function Stats() {
   return (
@@ -19,6 +20,13 @@ export default function Stats() {
         <p className="mt-1 text-xs opacity-60">Routine check-ins over the last 6 months.</p>
         <div className="mt-3">
           <ConsistencyHeatmap />
+        </div>
+      </section>
+
+      <section className="border-t border-black/5 px-4 py-4">
+        <h2 className="font-display text-lg font-semibold">Workouts</h2>
+        <div className="mt-2">
+          <WorkoutStats />
         </div>
       </section>
 

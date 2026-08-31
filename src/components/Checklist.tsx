@@ -1,12 +1,13 @@
 import { useEffect, useRef, useState } from 'react'
 import { useLiveQuery } from 'dexie-react-hooks'
-import { db, SETTINGS_ID, type Card, type PlanEntry, type Routine } from '../db'
+import { db, SETTINGS_ID, type Card, type PlanEntry, type Routine, type WorkoutTemplate } from '../db'
 import { weekdayMon0 } from '../lib/date'
 import { useToday } from '../lib/useToday'
 import { entriesForDate, sortChecklist } from '../lib/planEntries'
 import { buildReviewQueue } from '../lib/cards'
 import { toggleRoutineCheck, togglePlanEntryCheck } from '../lib/actions'
 import QuickEntrySheet from './QuickEntrySheet'
+import WorkoutLoggerSheet from './WorkoutLoggerSheet'
 import CardReviewFlow from './CardReviewFlow'
 
 const UNDO_TIMEOUT_MS = 5000
@@ -26,6 +27,7 @@ export default function Checklist({ date }: { date: string }) {
   const realToday = useToday()
   const todayWeekday = weekdayMon0(today)
   const [quickEntryRoutine, setQuickEntryRoutine] = useState<Routine | null>(null)
+  const [loggerRoutine, setLoggerRoutine] = useState<{ routine: Routine; template: WorkoutTemplate } | null>(null)
   const [undo, setUndo] = useState<UndoState | null>(null)
   // Snapshotted on open so grading a card (which shrinks the live due-queue) can't desync the review flow's index.
   const [reviewQueue, setReviewQueue] = useState<Card[] | null>(null)
@@ -49,6 +51,7 @@ export default function Checklist({ date }: { date: string }) {
   )
   const planChecks = useLiveQuery(() => db.planEntryChecks.where('date').equals(today).toArray(), [today])
   const cards = useLiveQuery(() => db.cards.toArray())
+  const workoutTemplates = useLiveQuery(() => db.workoutTemplates.toArray())
   const settings = useLiveQuery(() => db.settings.get(SETTINGS_ID))
 
   const isRoutineDone = (id: string) => routineChecks?.find((c) => c.routineId === id)?.done ?? false
@@ -67,6 +70,18 @@ export default function Checklist({ date }: { date: string }) {
       setQuickEntryRoutine(routine)
     }
     armUndo({ kind: 'routine', id: routine.id, name: routine.name, wasDone })
+  }
+
+  function handleRoutineTap(routine: Routine) {
+    const template = routine.workoutTemplateId
+      ? workoutTemplates?.find((t) => t.id === routine.workoutTemplateId)
+      : undefined
+    // An unchecked workout routine opens the logger; a checked one just unchecks.
+    if (template && !isRoutineDone(routine.id)) {
+      setLoggerRoutine({ routine, template })
+    } else {
+      handleToggleRoutine(routine)
+    }
   }
 
   async function handleTogglePlan(entry: PlanEntry) {
@@ -94,7 +109,7 @@ export default function Checklist({ date }: { date: string }) {
       title: r.name,
       time: undefined as string | undefined,
       done: isRoutineDone(r.id),
-      onToggle: () => handleToggleRoutine(r),
+      onToggle: () => handleRoutineTap(r),
     })),
     ...planEntries.map((e) => ({
       key: `p-${e.id}`,
@@ -147,6 +162,18 @@ export default function Checklist({ date }: { date: string }) {
 
       {quickEntryRoutine && (
         <QuickEntrySheet routine={quickEntryRoutine} date={today} onClose={() => setQuickEntryRoutine(null)} />
+      )}
+
+      {loggerRoutine && (
+        <WorkoutLoggerSheet
+          template={loggerRoutine.template}
+          goalId={loggerRoutine.template.goalId ?? loggerRoutine.routine.goalIds[0]}
+          date={today}
+          onClose={() => setLoggerRoutine(null)}
+          onSaved={() => {
+            if (!isRoutineDone(loggerRoutine.routine.id)) toggleRoutineCheck(loggerRoutine.routine.id, today)
+          }}
+        />
       )}
 
       {reviewQueue && <CardReviewFlow queue={reviewQueue} onClose={() => setReviewQueue(null)} />}

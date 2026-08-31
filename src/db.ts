@@ -13,6 +13,7 @@ export type Module =
   | 'metrics'
   | 'milestones'
   | 'routines'
+  | 'workouts'
   | 'resources'
   | 'cards'
   | 'photos'
@@ -90,6 +91,54 @@ export interface Routine {
   schedule: number[]
   quickMetricIds: string[]
   active: boolean
+  /** Optional: tapping this routine on Today opens the workout logger with this template. Not indexed. */
+  workoutTemplateId?: string
+}
+
+export interface TemplateExercise {
+  id: string
+  name: string
+  targetSets: number
+  targetReps?: number
+  targetWeight?: number
+  perSide: boolean
+  note?: string
+  sortOrder: number
+}
+
+/** A reusable training plan for a goal. Archived, never deleted. */
+export interface WorkoutTemplate {
+  id: string
+  name: string
+  goalId?: string
+  exercises: TemplateExercise[]
+  archived: boolean
+  createdAt: string
+}
+
+export interface LoggedSet {
+  id: string
+  exerciseId: string
+  exerciseName: string
+  setIndex: number
+  weight?: number
+  reps?: number
+  side?: 'left' | 'right' | 'both'
+  rpe?: number
+  done: boolean
+}
+
+/** A record of one workout actually performed. */
+export interface WorkoutSession {
+  id: string
+  date: string
+  name: string
+  templateId?: string
+  goalId?: string
+  sets: LoggedSet[]
+  note?: string
+  durationMin?: number
+  createdAt: string
 }
 
 export interface RoutineCheck {
@@ -169,6 +218,10 @@ export interface Photo {
   date: string
   blob: Blob
   caption?: string
+  /** Progress-photo pose. Non-indexed; older photos have none and show under "Unsorted". */
+  pose?: 'front' | 'back' | 'side' | 'other'
+  /** Optional bodyweight at the time of the photo. Non-indexed. */
+  weightKg?: number
 }
 
 export type PlanRecurrence = 'once' | 'weekly'
@@ -235,6 +288,8 @@ export class BlocksDB extends Dexie {
   planEntryChecks!: EntityTable<PlanEntryCheck, 'id'>
   settings!: EntityTable<Settings, 'id'>
   todos!: EntityTable<Todo, 'id'>
+  workoutTemplates!: EntityTable<WorkoutTemplate, 'id'>
+  workoutSessions!: EntityTable<WorkoutSession, 'id'>
 
   constructor() {
     super('blocks')
@@ -266,6 +321,11 @@ export class BlocksDB extends Dexie {
     })
     this.version(4).stores({
       todos: 'id, goalId, done, dueDate',
+    })
+    // New tables start empty, so no upgrade function is needed.
+    this.version(5).stores({
+      workoutTemplates: 'id, goalId',
+      workoutSessions: 'id, date, goalId, templateId',
     })
   }
 }

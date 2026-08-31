@@ -13,7 +13,7 @@ import {
 } from 'recharts'
 import { db, type Metric, type MetricEntry, type MetricField } from '../db'
 import { useToday } from '../lib/useToday'
-import { aggregateWeekly, aggregateWeeklyByField, imbalanceSeries } from '../lib/metrics'
+import { aggregateWeekly, aggregateWeeklyByField, imbalancePercent, imbalanceSeries } from '../lib/metrics'
 import {
   addMetricEntry,
   addMetricFieldEntry,
@@ -250,11 +250,6 @@ function EntryEditRow({ entry, onDone }: { entry: MetricEntry; onDone: () => voi
  * Multi-field metric — one entry holds several named values.
  * ------------------------------------------------------------------ */
 
-function gapPercent(left: number, right: number): number {
-  const larger = Math.max(Math.abs(left), Math.abs(right))
-  return larger === 0 ? 0 : (Math.abs(left - right) / larger) * 100
-}
-
 function MultiFieldMetricBlock({ metric, fields }: { metric: Metric; fields: MetricField[] }) {
   const today = useToday()
   const entries = useLiveQuery(() => db.entries.where('metricId').equals(metric.id).sortBy('date'), [metric.id])
@@ -305,7 +300,7 @@ function MultiFieldMetricBlock({ metric, fields }: { metric: Metric; fields: Met
     if (isLeftRight && leftId && rightId) {
       const l = e.values?.[leftId]
       const r = e.values?.[rightId]
-      if (l !== undefined && r !== undefined) row.__gap = gapPercent(l, r)
+      if (l !== undefined && r !== undefined) row.__gap = imbalancePercent(l, r)
     }
     return row
   })
@@ -431,7 +426,7 @@ function MultiFieldMetricBlock({ metric, fields }: { metric: Metric; fields: Met
                     rightId &&
                     e.values?.[leftId] !== undefined &&
                     e.values?.[rightId] !== undefined &&
-                    `  ·  gap ${Math.round(gapPercent(e.values[leftId], e.values[rightId]))}%`}
+                    `  ·  gap ${Math.round(imbalancePercent(e.values[leftId], e.values[rightId]))}%`}
                   {e.note ? ` · ${e.note}` : ''}
                 </span>
                 <span className="flex shrink-0 gap-2">

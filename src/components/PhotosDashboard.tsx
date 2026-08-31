@@ -19,6 +19,7 @@ export default function PhotosDashboard() {
   const [beforeId, setBeforeId] = useState<string | null>(null)
   const [afterId, setAfterId] = useState<string | null>(null)
   const [useSlider, setUseSlider] = useState(false)
+  const [comparePose, setComparePose] = useState<string>('')
 
   if (!goals || !allPhotos) return null
 
@@ -37,9 +38,16 @@ export default function PhotosDashboard() {
   const activeGoal = photoGoals.find((g) => g.id === activeGoalId)
 
   const photos = [...allPhotos.filter((p) => p.goalId === activeGoalId)].sort((a, b) => a.date.localeCompare(b.date))
-  const photosNewestFirst = [...photos].reverse()
-  const beforePhoto = photos.find((p) => p.id === beforeId) ?? photos[0]
-  const afterPhoto = photos.find((p) => p.id === afterId) ?? photos[photos.length - 1]
+
+  // Compare only works within one pose (an em-dash "front vs back" comparison is meaningless).
+  const poseKey = (p: Photo): string => p.pose ?? 'unsorted'
+  const poseOptions = [...new Set(photos.map(poseKey))]
+  const activePose = poseOptions.includes(comparePose) ? comparePose : (poseOptions[0] ?? '')
+  const comparablePhotos = photos.filter((p) => poseKey(p) === activePose)
+  const photosNewestFirst = [...comparablePhotos].reverse()
+  const beforePhoto = comparablePhotos.find((p) => p.id === beforeId) ?? comparablePhotos[0]
+  const afterPhoto =
+    comparablePhotos.find((p) => p.id === afterId) ?? comparablePhotos[comparablePhotos.length - 1]
 
   async function handleFile(e: React.ChangeEvent<HTMLInputElement>) {
     const file = e.target.files?.[0]
@@ -57,7 +65,7 @@ export default function PhotosDashboard() {
   return (
     <div>
       <p className="text-xs opacity-60">
-        Daily photos live in your phone's gallery — this is for periodic progress shots, added any time.
+        Periodic physique and strength progress shots. Compare works within one pose — front vs front, back vs back.
       </p>
 
       <div className="mt-2 flex flex-wrap gap-1.5">
@@ -93,7 +101,7 @@ export default function PhotosDashboard() {
             ))}
           </div>
 
-          {photos.length >= 2 && beforePhoto && afterPhoto && (
+          {comparablePhotos.length >= 2 && beforePhoto && afterPhoto && (
             <div className="mt-4">
               <div className="flex items-center justify-between">
                 <p className="text-xs font-medium opacity-60">Compare</p>
@@ -102,6 +110,26 @@ export default function PhotosDashboard() {
                   Slider
                 </label>
               </div>
+              {poseOptions.length > 1 && (
+                <div className="mt-1.5 flex flex-wrap gap-1.5">
+                  {poseOptions.map((pose) => (
+                    <button
+                      key={pose}
+                      type="button"
+                      onClick={() => {
+                        setComparePose(pose)
+                        setBeforeId(null)
+                        setAfterId(null)
+                      }}
+                      className={`rounded-full border px-2 py-0.5 text-[11px] font-medium capitalize ${
+                        activePose === pose ? 'border-accent bg-accent/5 text-accent' : 'border-black/10 opacity-70'
+                      }`}
+                    >
+                      {pose}
+                    </button>
+                  ))}
+                </div>
+              )}
               <div className="mt-1.5 flex gap-2">
                 <select
                   value={beforePhoto.id}

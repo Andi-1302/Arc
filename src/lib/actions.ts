@@ -7,9 +7,12 @@ import {
   type MetricEntry,
   type MetricField,
   type Module,
+  type Photo,
   type PlanRecurrence,
   type Routine,
   type Settings,
+  type TemplateExercise,
+  type WorkoutSession,
 } from '../db'
 import { todayISO } from './date'
 import { primaryValue } from './metrics'
@@ -137,6 +140,8 @@ export async function deleteGoalPermanently(goalId: string) {
   await db.cards.where('goalId').equals(goalId).delete()
   await db.photos.where('goalId').equals(goalId).delete()
   await db.todos.where('goalId').equals(goalId).delete()
+  await db.workoutTemplates.where('goalId').equals(goalId).delete()
+  await db.workoutSessions.where('goalId').equals(goalId).delete()
 
   const linkedRoutines = await db.routines.where('goalIds').equals(goalId).toArray()
   for (const routine of linkedRoutines) {
@@ -252,6 +257,7 @@ interface RoutinePatch {
   goalIds: string[]
   schedule: number[]
   quickMetricIds: string[]
+  workoutTemplateId?: string
 }
 
 export async function createRoutine(input: RoutinePatch) {
@@ -351,12 +357,21 @@ export async function deleteResource(id: string) {
   await db.resources.delete(id)
 }
 
-export async function createPhoto(goalId: string, blob: Blob, date: string, caption?: string) {
-  await db.photos.add({ id: uid(), goalId, date, blob, caption })
+export async function createPhoto(
+  goalId: string,
+  blob: Blob,
+  date: string,
+  extra?: { caption?: string; pose?: Photo['pose']; weightKg?: number },
+) {
+  await db.photos.add({ id: uid(), goalId, date, blob, ...extra })
 }
 
 export async function updatePhotoCaption(id: string, caption?: string) {
   await db.photos.update(id, { caption })
+}
+
+export async function updatePhotoPose(id: string, pose: Photo['pose']) {
+  await db.photos.update(id, { pose })
 }
 
 export async function deletePhoto(id: string) {
@@ -431,6 +446,54 @@ export async function toggleTodo(id: string, done: boolean) {
 
 export async function deleteTodo(id: string) {
   await db.todos.delete(id)
+}
+
+/* -------------------- workouts (spec: training plan + session log) -------------------- */
+
+export async function createWorkoutTemplate(input: {
+  name: string
+  goalId?: string
+  exercises?: TemplateExercise[]
+}) {
+  const id = uid()
+  await db.workoutTemplates.add({
+    id,
+    name: input.name,
+    goalId: input.goalId,
+    exercises: input.exercises ?? [],
+    archived: false,
+    createdAt: new Date().toISOString(),
+  })
+  return id
+}
+
+export async function updateWorkoutTemplate(
+  id: string,
+  patch: { name?: string; exercises?: TemplateExercise[] },
+) {
+  await db.workoutTemplates.update(id, patch)
+}
+
+/** Templates are archived, never deleted. */
+export async function setWorkoutTemplateArchived(id: string, archived: boolean) {
+  await db.workoutTemplates.update(id, { archived })
+}
+
+export async function createWorkoutSession(input: Omit<WorkoutSession, 'id' | 'createdAt'>) {
+  const id = uid()
+  await db.workoutSessions.add({ id, createdAt: new Date().toISOString(), ...input })
+  return id
+}
+
+export async function updateWorkoutSession(
+  id: string,
+  patch: Partial<Omit<WorkoutSession, 'id' | 'createdAt'>>,
+) {
+  await db.workoutSessions.update(id, patch)
+}
+
+export async function deleteWorkoutSession(id: string) {
+  await db.workoutSessions.delete(id)
 }
 
 export async function saveDailyRating(date: string, rating: number) {
