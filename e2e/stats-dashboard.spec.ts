@@ -15,13 +15,13 @@ test('hiding a chart from the Stats dashboard moves it under "Show all"', async 
   const kmChart = page.getByRole('heading', { name: 'Weekly km', exact: true })
   await expect(kmChart).toBeVisible()
 
-  // Hide it via the per-chart overflow control.
-  await page.getByRole('button', { name: 'Chart options for Weekly km' }).click()
+  // Hide it via the per-chart mode chip.
+  await page.getByRole('button', { name: /Dashboard visibility for Weekly km/ }).click()
   await page.getByRole('button', { name: 'Never', exact: true }).click()
 
   await expect(kmChart).toHaveCount(0)
 
   // It's now retrievable under "Show all".
-  await page.getByRole('button', { name: /^Show all \(1\)$/ }).click()
+  await page.getByRole('button', { name: /^Show all \(\d+\)$/ }).click()
   await expect(kmChart).toBeVisible()
 })

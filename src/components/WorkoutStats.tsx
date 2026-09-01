@@ -1,18 +1,31 @@
 import { useState } from 'react'
 import { useLiveQuery } from 'dexie-react-hooks'
 import { BarChart, Bar, LineChart, Line, XAxis, YAxis, Tooltip, ResponsiveContainer } from 'recharts'
-import { db, type WorkoutSession } from '../db'
+import { db, SETTINGS_ID, type WorkoutSession } from '../db'
 import { formatDayLabel } from '../lib/date'
-import { exerciseSeries, exerciseWeeklyVolume, exercisesByRecency, isPerSideExercise } from '../lib/workouts'
+import {
+  exerciseDashboardMode,
+  exerciseSeries,
+  exerciseWeeklyVolume,
+  exercisesByRecency,
+  isPerSideExercise,
+} from '../lib/workouts'
+import { setExerciseDashboardMode } from '../lib/actions'
 import AreaFilterChips, { type AreaFilterValue } from './AreaFilterChips'
+import ChartModeMenu, { type ChartMode } from './ChartModeMenu'
+
+// Exercises are binary — shown or hidden. The shared chip may emit 'always'; treat it as 'auto'.
+const toExerciseMode = (mode: ChartMode): 'auto' | 'never' => (mode === 'never' ? 'never' : 'auto')
 
 export default function WorkoutStats() {
   const goals = useLiveQuery(() => db.goals.toArray())
   const areas = useLiveQuery(() => db.areas.orderBy('sortOrder').toArray())
   const sessions = useLiveQuery(() => db.workoutSessions.toArray())
+  const settings = useLiveQuery(() => db.settings.get(SETTINGS_ID))
 
   const [areaFilter, setAreaFilter] = useState<AreaFilterValue>('all')
   const [selected, setSelected] = useState<string | null>(null)
+  const [showAll, setShowAll] = useState(false)
 
   if (!goals || !areas || !sessions) return null
 
@@ -20,6 +33,7 @@ export default function WorkoutStats() {
     return <p className="text-sm opacity-60">No workout sessions logged yet.</p>
   }
 
+  const hidden = settings?.hiddenExercises ?? []
   const areaOf = new Map(goals.map((g) => [g.id, g.areaId]))
   const filtered = sessions.filter((s) => {
     if (areaFilter === 'all') return true
@@ -27,34 +41,76 @@ export default function WorkoutStats() {
     return s.goalId !== undefined && areaOf.get(s.goalId) === areaFilter
   })
 
-  const exercises = exercisesByRecency(filtered)
-  const activeName = exercises.find((e) => e.name === selected)?.name ?? exercises[0]?.name
+  const all = exercisesByRecency(filtered)
+  const visible = all.filter((ex) => exerciseDashboardMode(ex.name, hidden) === 'auto')
+  const overflow = all.filter((ex) => exerciseDashboardMode(ex.name, hidden) === 'never')
+  const activeName = visible.find((e) => e.name === selected)?.name ?? visible[0]?.name
 
   return (
     <div>
       <AreaFilterChips areas={areas} value={areaFilter} onChange={setAreaFilter} includeGlobal={false} />
 
-      {exercises.length === 0 ? (
+      {all.length === 0 ? (
         <p className="mt-3 text-sm opacity-60">No exercises logged for this filter.</p>
       ) : (
         <>
-          <div className="mt-2 flex flex-wrap gap-1.5">
-            {exercises.map((ex) => (
-              <button
-                key={ex.name}
-                type="button"
-                onClick={() => setSelected(ex.name)}
-                className={`shrink-0 rounded-full border px-2.5 py-1 text-xs font-medium ${
-                  ex.name === activeName ? 'border-accent bg-accent/5 text-accent' : 'border-black/10 opacity-70'
-                }`}
-              >
-                {ex.name} <span className="opacity-50">· {formatDayLabel(ex.lastDate)}</span>
-              </button>
-            ))}
-          </div>
+          {visible.length > 0 ? (
+            <div className="mt-2 flex flex-wrap gap-1.5">
+              {visible.map((ex) => (
+                <button
+                  key={ex.name}
+                  type="button"
+                  onClick={() => setSelected(ex.name)}
+                  className={`shrink-0 rounded-full border px-2.5 py-1 text-xs font-medium ${
+                    ex.name === activeName ? 'border-accent bg-accent/5 text-accent' : 'border-black/10 opacity-70'
+                  }`}
+                >
+                  {ex.name} <span className="opacity-50">· {formatDayLabel(ex.lastDate)}</span>
+                </button>
+              ))}
+            </div>
+          ) : (
+            <p className="mt-2 text-sm opacity-60">Every exercise for this filter is hidden.</p>
+          )}
+
           {activeName && (
             <div className="mt-3">
-              <ExerciseCharts key={activeName} name={activeName} sessions={filtered} />
+              <ExerciseCharts
+                key={activeName}
+                name={activeName}
+                sessions={filtered}
+                onModeChange={(mode) => setExerciseDashboardMode(activeName, toExerciseMode(mode))}
+              />
+            </div>
+          )}
+
+          {overflow.length > 0 && (
+            <div className="mt-4">
+              <button
+                type="button"
+                onClick={() => setShowAll((s) => !s)}
+                className="text-sm font-medium text-accent"
+              >
+                {showAll ? 'Hide' : 'Show all'} ({overflow.length})
+              </button>
+              {showAll && (
+                <ul className="mt-2 divide-y divide-black/5">
+                  {overflow.map((ex) => (
+                    <li key={ex.name} className="flex items-center justify-between gap-2 py-1.5">
+                      <span className="min-w-0">
+                        <span className="truncate text-sm font-medium">{ex.name}</span>
+                        <span className="block text-xs opacity-50">Last logged {formatDayLabel(ex.lastDate)}</span>
+                      </span>
+                      <ChartModeMenu
+                        label={ex.name}
+                        mode="never"
+                        modes={['auto', 'never']}
+                        onChange={(mode) => setExerciseDashboardMode(ex.name, toExerciseMode(mode))}
+                      />
+                    </li>
+                  ))}
+                </ul>
+              )}
             </div>
           )}
         </>
@@ -63,7 +119,15 @@ export default function WorkoutStats() {
   )
 }
 
-function ExerciseCharts({ name, sessions }: { name: string; sessions: WorkoutSession[] }) {
+function ExerciseCharts({
+  name,
+  sessions,
+  onModeChange,
+}: {
+  name: string
+  sessions: WorkoutSession[]
+  onModeChange: (mode: ChartMode) => void
+}) {
   const series = exerciseSeries(sessions, name)
   const weekly = exerciseWeeklyVolume(sessions, name)
   const perSide = isPerSideExercise(sessions, name)
@@ -74,7 +138,10 @@ function ExerciseCharts({ name, sessions }: { name: string; sessions: WorkoutSes
 
   return (
     <div className="rounded-lg border border-black/5 bg-surface p-3">
-      <p className="text-xs font-medium">{name}</p>
+      <div className="flex items-center justify-between gap-2">
+        <p className="text-xs font-medium">{name}</p>
+        <ChartModeMenu label={name} mode="auto" modes={['auto', 'never']} onChange={onModeChange} />
+      </div>
 
       <p className="mt-2 text-[11px] opacity-50">Top-set weight (kg)</p>
       <div className="mt-1 h-24">

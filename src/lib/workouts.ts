@@ -78,6 +78,11 @@ export function exerciseWeeklyVolume(sessions: WorkoutSession[], exerciseName: s
   return [...byWeek.entries()].sort(([a], [b]) => a.localeCompare(b)).map(([week, volume]) => ({ week, volume }))
 }
 
+/** An exercise is 'never' (hidden from the chip row) when its normalised name is in the hidden list, else 'auto'. */
+export function exerciseDashboardMode(name: string, hidden: string[]): 'auto' | 'never' {
+  return hidden.includes(norm(name)) ? 'never' : 'auto'
+}
+
 /** Distinct exercises across the given sessions with the date each was last logged, most recent first. */
 export function exercisesByRecency(sessions: WorkoutSession[]): { name: string; lastDate: string }[] {
   const byName = new Map<string, { name: string; lastDate: string }>()

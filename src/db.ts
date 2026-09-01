@@ -267,6 +267,8 @@ export interface Settings {
   hideRoutineChecklist: boolean
   /** Local hour (0–23) the day "ends" — a check-in before this hour after midnight is offered for the previous day. Not indexed; defaults to 4. */
   dayCutoffHour?: number
+  /** Normalised (lowercased, trimmed) exercise names set to "Never" in Workout stats. Not indexed. */
+  hiddenExercises?: string[]
 }
 
 export const SETTINGS_ID = 'settings'

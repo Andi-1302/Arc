@@ -3,11 +3,11 @@ import { useLiveQuery } from 'dexie-react-hooks'
 import { db, type Goal, type Metric } from '../db'
 import { addDays, todayISO } from '../lib/date'
 import { getCurrentBlock, getPrioritizedGoalIds } from '../lib/prioritized'
-import { isDormant, isMetricOnDashboard, metricDashboardMode } from '../lib/metrics'
+import { bucketDashboardMetrics, metricDashboardMode } from '../lib/metrics'
 import { updateMetric } from '../lib/actions'
 import DashboardMetricChart from './DashboardMetricChart'
 import AreaFilterChips, { type AreaFilterValue } from './AreaFilterChips'
-import ChartModeMenu from './ChartModeMenu'
+import ChartModeMenu, { type ChartMode } from './ChartModeMenu'
 
 const TIME_RANGES: { label: string; days: number | null }[] = [
   { label: '4w', days: 28 },
@@ -23,6 +23,26 @@ function matchesAreaFilter(metric: Metric, goals: Goal[], areaFilter: AreaFilter
   if (!metric.goalId) return false
   const goal = goals.find((g) => g.id === metric.goalId)
   return goal?.areaId === areaFilter
+}
+
+function CompactMetricRow({
+  metric,
+  mode,
+  onModeChange,
+}: {
+  metric: Metric
+  mode: ChartMode
+  onModeChange: (mode: ChartMode) => void
+}) {
+  return (
+    <div className="flex items-center justify-between gap-2 rounded-lg border border-black/5 bg-surface px-3 py-1.5">
+      <div className="min-w-0">
+        <p className="truncate text-sm font-medium">{metric.name}</p>
+        <p className="text-xs opacity-50">No entries yet</p>
+      </div>
+      <ChartModeMenu label={metric.name} mode={mode} onChange={onModeChange} />
+    </div>
+  )
 }
 
 export default function MetricDashboard() {
@@ -49,31 +69,30 @@ export default function MetricDashboard() {
     const cur = lastEntry.get(e.metricId)
     if (!cur || e.date > cur) lastEntry.set(e.metricId, e.date)
   }
-  const lastOf = (m: Metric) => lastEntry.get(m.id) ?? null
-  const byRecency = (a: Metric, b: Metric) => (lastOf(b) ?? '').localeCompare(lastOf(a) ?? '')
+  const lastEntryDate = (id: string) => lastEntry.get(id) ?? null
 
   const inArea = metrics.filter((m) => matchesAreaFilter(m, goals, areaFilter))
-  const shown = inArea.filter((m) => isMetricOnDashboard(m, prioritized)).sort(byRecency)
-  const active = shown.filter((m) => !isDormant(lastOf(m), today))
-  const dormant = shown.filter((m) => isDormant(lastOf(m), today))
-  // "Show all" = everything else with data: mode 'never', or 'auto' on a resting goal.
-  const overflow = inArea
-    .filter((m) => !isMetricOnDashboard(m, prioritized) && lastEntry.has(m.id))
-    .sort(byRecency)
+  const { active, dormant, overflow } = bucketDashboardMetrics(inArea, prioritized, lastEntryDate, today)
 
-  const chart = (metric: Metric) => {
+  const setMode = (metric: Metric) => (mode: ChartMode) => updateMetric(metric.id, { dashboardMode: mode })
+
+  const renderMetric = (metric: Metric) => {
+    const mode = metricDashboardMode(metric)
+    // A metric with no entries at all has no chart to hang a control off — render a compact row instead.
+    if (!lastEntry.has(metric.id)) {
+      return <CompactMetricRow key={metric.id} metric={metric} mode={mode} onModeChange={setMode(metric)} />
+    }
     const entries = allEntries
       .filter((e) => e.metricId === metric.id && (!cutoff || e.date >= cutoff))
       .sort((a, b) => a.date.localeCompare(b.date))
     return (
-      <div key={metric.id} className="relative">
-        <DashboardMetricChart metric={metric} entries={entries} />
-        <ChartModeMenu
-          label={metric.name}
-          mode={metricDashboardMode(metric)}
-          onChange={(mode) => updateMetric(metric.id, { dashboardMode: mode })}
-        />
-      </div>
+      <DashboardMetricChart
+        key={metric.id}
+        metric={metric}
+        entries={entries}
+        mode={mode}
+        onModeChange={setMode(metric)}
+      />
     )
   }
 
@@ -101,7 +120,9 @@ export default function MetricDashboard() {
       {active.length === 0 && dormant.length === 0 && overflow.length === 0 ? (
         <p className="mt-4 text-sm opacity-60">Nothing to show for this filter yet.</p>
       ) : (
-        <div className="mt-3 space-y-3">{active.map(chart)}</div>
+        <div data-testid="dashboard-active" className="mt-3 space-y-3">
+          {active.map(renderMetric)}
+        </div>
       )}
 
       {dormant.length > 0 && (
@@ -113,7 +134,7 @@ export default function MetricDashboard() {
           >
             {showDormant ? 'Hide' : 'Show'} dormant ({dormant.length})
           </button>
-          {showDormant && <div className="mt-2 space-y-3">{dormant.map(chart)}</div>}
+          {showDormant && <div className="mt-2 space-y-3">{dormant.map(renderMetric)}</div>}
         </div>
       )}
 
@@ -126,7 +147,7 @@ export default function MetricDashboard() {
           >
             {showAll ? 'Hide' : 'Show all'} ({overflow.length})
           </button>
-          {showAll && <div className="mt-2 space-y-3">{overflow.map(chart)}</div>}
+          {showAll && <div className="mt-2 space-y-3">{overflow.map(renderMetric)}</div>}
         </div>
       )}
     </div>

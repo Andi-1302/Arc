@@ -28,10 +28,61 @@ export function isMetricOnDashboard(
   return metric.goalId === null || prioritizedGoalIds.includes(metric.goalId)
 }
 
-/** Dormant = no activity in the last `weeks` weeks (or never). Used to fold stale items away in Stats. */
-export function isDormant(lastActivity: string | null | undefined, today: string, weeks = 8): boolean {
+export const DORMANT_WEEKS = 12
+
+/**
+ * Dormancy applies only to the long tail. A metric that resolves to 'always', or
+ * that sits on the current block's focus / secondary goal, is never dormant — a
+ * rarely-measured benchmark on a live goal is deliberate, not stale. Otherwise it
+ * is dormant when its last entry is older than {@link DORMANT_WEEKS} weeks (a block
+ * length), or it has none.
+ */
+export function isDormant(
+  metric: Pick<Metric, 'goalId' | 'dashboardMode' | 'showOnDashboard'>,
+  lastActivity: string | null | undefined,
+  prioritizedGoalIds: string[],
+  today: string,
+  weeks = DORMANT_WEEKS,
+): boolean {
+  if (metricDashboardMode(metric) === 'always') return false
+  if (metric.goalId !== null && prioritizedGoalIds.includes(metric.goalId)) return false
   if (!lastActivity) return true
   return daysBetween(lastActivity, today) > weeks * 7
+}
+
+export interface DashboardBuckets {
+  /** shown by default, most prominent first (pinned, then most recently measured) */
+  active: Metric[]
+  /** shown, but folded away — resolves to 'auto', not on a live goal, nothing logged in ~12 weeks */
+  dormant: Metric[]
+  /** not shown by default — 'never', or 'auto' on a resting goal — regardless of whether it has entries */
+  overflow: Metric[]
+}
+
+/**
+ * Splits the (already area-filtered) metrics into the three Stats-dashboard groups.
+ * `lastEntryDate` returns a metric's most recent entry date, or null when it has none.
+ */
+export function bucketDashboardMetrics(
+  metrics: Metric[],
+  prioritizedGoalIds: string[],
+  lastEntryDate: (metricId: string) => string | null,
+  today: string,
+): DashboardBuckets {
+  const byRecency = (a: Metric, b: Metric) =>
+    (lastEntryDate(b.id) ?? '').localeCompare(lastEntryDate(a.id) ?? '')
+  const pinnedFirst = (a: Metric, b: Metric) => {
+    const rank = (m: Metric) => (metricDashboardMode(m) === 'always' ? 0 : 1)
+    return rank(a) - rank(b) || byRecency(a, b)
+  }
+  const dorm = (m: Metric) => isDormant(m, lastEntryDate(m.id), prioritizedGoalIds, today)
+
+  const shown = metrics.filter((m) => isMetricOnDashboard(m, prioritizedGoalIds))
+  return {
+    active: shown.filter((m) => !dorm(m)).sort(pinnedFirst),
+    dormant: shown.filter(dorm).sort(byRecency),
+    overflow: metrics.filter((m) => !isMetricOnDashboard(m, prioritizedGoalIds)).sort(byRecency),
+  }
 }
 
 export interface WeeklyPoint {

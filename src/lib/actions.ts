@@ -211,6 +211,16 @@ export async function updateSettings(patch: Partial<Omit<Settings, 'id'>>) {
   await db.settings.update(SETTINGS_ID, patch)
 }
 
+/** Toggle an exercise's Workout-stats visibility (auto ↔ never), keyed by its normalised name. */
+export async function setExerciseDashboardMode(exerciseName: string, mode: 'auto' | 'never') {
+  const settings = await db.settings.get(SETTINGS_ID)
+  const key = exerciseName.trim().toLowerCase()
+  const current = settings?.hiddenExercises ?? []
+  const next =
+    mode === 'never' ? [...new Set([...current, key])] : current.filter((name) => name !== key)
+  await db.settings.update(SETTINGS_ID, { hiddenExercises: next })
+}
+
 interface BlockPriorities {
   name: string
   startDate: string
