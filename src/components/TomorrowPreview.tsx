@@ -4,6 +4,7 @@ import { db } from '../db'
 import { addDays, weekdayMon0 } from '../lib/date'
 import { entriesForDate, sortChecklist } from '../lib/planEntries'
 import { saveDayLog } from '../lib/actions'
+import AddForTomorrow from './AddForTomorrow'
 
 export default function TomorrowPreview({ date }: { date: string }) {
   // Follows the Today navigator's selected day: the "tomorrow" being previewed is the day after it.
@@ -52,6 +53,9 @@ export default function TomorrowPreview({ date }: { date: string }) {
       ) : (
         <p className="mt-1 text-sm opacity-70">Nothing scheduled.</p>
       )}
+      <div className="mt-2">
+        <AddForTomorrow tomorrow={tomorrow} />
+      </div>
       <input
         type="text"
         placeholder="Tomorrow's focus (optional)"

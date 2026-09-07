@@ -21,6 +21,7 @@ import { routinesLosingPriority } from './block'
 import { applyGrade } from './sm2'
 import { buildBackupJson, restoreFromBackupJson } from './backup'
 import { downloadBlob } from './download'
+import { buildTodosFromPlanEntries, convertibleEntries, previewConversion, type ConversionPreview } from './planEntryConversion'
 
 const uid = () => crypto.randomUUID()
 
@@ -439,11 +440,24 @@ interface TodoPatch {
   title: string
   dueDate?: string
   goalId?: string
+  areaId?: string
+  note?: string
+  priority?: 0 | 1 | 2
+  sortOrder?: number
 }
 
 export async function createTodo(input: TodoPatch) {
   const id = uid()
-  await db.todos.add({ id, done: false, createdAt: new Date().toISOString(), ...input })
+  await db.todos.add({
+    id,
+    done: false,
+    createdAt: new Date().toISOString(),
+    ...input,
+    priority: input.priority ?? 0,
+    // A fresh timestamp sorts after any manually-ordered rows (which use small integers),
+    // so new todos land at the bottom of their priority group instead of the top.
+    sortOrder: input.sortOrder ?? Date.now(),
+  })
   return id
 }
 
@@ -455,8 +469,50 @@ export async function toggleTodo(id: string, done: boolean) {
   await db.todos.update(id, { done, doneAt: done ? todayISO() : undefined })
 }
 
+export async function setTodoDueDate(id: string, dueDate?: string) {
+  await db.todos.update(id, { dueDate })
+}
+
+export async function setTodoPriority(id: string, priority: 0 | 1 | 2) {
+  await db.todos.update(id, { priority })
+}
+
+/** Persists a drag-reorder: each id's new sortOrder is its position in the given order. */
+export async function reorderTodos(orderedIds: string[]) {
+  await db.transaction('rw', db.todos, async () => {
+    await Promise.all(orderedIds.map((id, index) => db.todos.update(id, { sortOrder: index })))
+  })
+}
+
 export async function deleteTodo(id: string) {
   await db.todos.delete(id)
+}
+
+/** Preview for Settings' "Move one-off plan entries to Todos" — read-only, never mutates. */
+export async function planEntryConversionPreview(): Promise<ConversionPreview> {
+  return previewConversion(await db.planEntries.toArray())
+}
+
+/**
+ * Converts every untimed one-off PlanEntry into a Todo (title/areaId/dueDate from the entry,
+ * done/doneAt from its PlanEntryCheck), then deletes the converted entries and their checks —
+ * all in one transaction. Only ever runs from the Settings button. Idempotent: once an entry
+ * is converted it's gone, so running this again with nothing left to convert is a no-op.
+ */
+export async function convertOneOffPlanEntriesToTodos(): Promise<number> {
+  return db.transaction('rw', [db.planEntries, db.planEntryChecks, db.todos], async () => {
+    const entries = await db.planEntries.toArray()
+    const ids = convertibleEntries(entries).map((e) => e.id)
+    if (ids.length === 0) return 0
+
+    const checks = await db.planEntryChecks.where('planEntryId').anyOf(ids).toArray()
+    const todos = buildTodosFromPlanEntries(entries, checks, uid)
+
+    await db.todos.bulkAdd(todos)
+    await db.planEntryChecks.where('planEntryId').anyOf(ids).delete()
+    await db.planEntries.bulkDelete(ids)
+    return todos.length
+  })
 }
 
 /* -------------------- workouts (spec: training plan + session log) -------------------- */

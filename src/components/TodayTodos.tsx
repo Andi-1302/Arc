@@ -1,13 +1,18 @@
 import { useState } from 'react'
 import { useLiveQuery } from 'dexie-react-hooks'
-import { db } from '../db'
+import { db, type Todo } from '../db'
 import { todosForToday } from '../lib/todos'
 import { useToday } from '../lib/useToday'
-import { createTodo, toggleTodo } from '../lib/actions'
+import { addDays } from '../lib/date'
+import { createTodo, reorderTodos, setTodoPriority, toggleTodo } from '../lib/actions'
+import { useReorderableList } from '../lib/useReorderableList'
+import PriorityChips from './PriorityChips'
+import AddForTomorrow from './AddForTomorrow'
 
 export default function TodayTodos({ date }: { date: string }) {
   const realToday = useToday()
   const today = date
+  const tomorrow = addDays(date, 1)
   const todos = useLiveQuery(() => db.todos.toArray())
   const [title, setTitle] = useState('')
   const [adding, setAdding] = useState(false)
@@ -21,9 +26,12 @@ export default function TodayTodos({ date }: { date: string }) {
     setAdding(false)
   }
 
-  if (!todos) return null
+  const items = todos ? todosForToday(todos, today) : []
+  const { order, registerRef, handlePointerDown } = useReorderableList(items, reorderTodos)
+  const byId = new Map(items.map((t) => [t.id, t]))
+  const ordered = order.map((id) => byId.get(id)).filter((t): t is Todo => t !== undefined)
 
-  const items = todosForToday(todos, today)
+  if (!todos) return null
 
   return (
     <div className="px-4 py-4">
@@ -49,27 +57,47 @@ export default function TodayTodos({ date }: { date: string }) {
         </button>
       </div>
 
-      {items.length === 0 ? (
+      <div className="mt-2">
+        <AddForTomorrow tomorrow={tomorrow} />
+      </div>
+
+      {ordered.length === 0 ? (
         <p className="mt-3 text-sm opacity-60">Nothing due.</p>
       ) : (
         <ul className="mt-2 divide-y divide-black/5">
-          {items.map((todo) => {
-            const overdue = todo.dueDate && todo.dueDate < today
+          {ordered.map((todo) => {
+            const overdue = !todo.done && Boolean(todo.dueDate && todo.dueDate < today)
             return (
-              <li key={todo.id} className="flex items-center gap-3 py-3">
+              <li
+                key={todo.id}
+                ref={(el) => registerRef(todo.id, el)}
+                className="flex items-start gap-2 py-3"
+              >
+                <span
+                  aria-label={`Drag to reorder ${todo.title}`}
+                  onPointerDown={(e) => handlePointerDown(todo.id, e)}
+                  className="mt-1 shrink-0 cursor-grab touch-none select-none px-1 text-sm leading-none opacity-40"
+                >
+                  ⠿
+                </span>
                 <button
                   type="button"
-                  onClick={() => toggleTodo(todo.id, true)}
-                  aria-pressed={false}
-                  aria-label={`Complete ${todo.title}`}
-                  className="h-6 w-6 shrink-0 rounded-full border-2 border-ink/30"
+                  onClick={() => toggleTodo(todo.id, !todo.done)}
+                  aria-pressed={todo.done}
+                  aria-label={`${todo.done ? 'Reopen' : 'Complete'} ${todo.title}`}
+                  className={`mt-0.5 h-6 w-6 shrink-0 rounded-full border-2 ${todo.done ? 'border-accent bg-accent' : 'border-ink/30'}`}
                 />
-                <span className="flex-1">{todo.title}</span>
-                {todo.dueDate && (
-                  <span className={`shrink-0 text-xs tabular-nums ${overdue ? 'font-medium text-warning' : 'opacity-50'}`}>
-                    {overdue ? 'Overdue' : 'Today'}
-                  </span>
-                )}
+                <div className="min-w-0 flex-1">
+                  <span className={`block truncate ${todo.done ? 'line-through opacity-50' : ''}`}>{todo.title}</span>
+                  <div className="mt-1.5 flex flex-wrap items-center gap-1.5">
+                    {overdue && (
+                      <span className="rounded-full bg-warning/15 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-warning">
+                        Overdue
+                      </span>
+                    )}
+                    <PriorityChips value={todo.priority ?? 0} onChange={(p) => setTodoPriority(todo.id, p)} />
+                  </div>
+                </div>
               </li>
             )
           })}

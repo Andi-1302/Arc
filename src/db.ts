@@ -256,6 +256,13 @@ export interface Todo {
   dueDate?: string
   goalId?: string
   createdAt: string
+  // --- day-to-day usability fields (all non-indexed, no schema version bump) ---
+  /** 0 = normal, 1 = important, 2 = urgent. Older rows predate this — read as `todo.priority ?? 0`. */
+  priority?: 0 | 1 | 2
+  /** Manual ordering within a priority group. Older rows predate this — read as `todo.sortOrder ?? 0`. */
+  sortOrder?: number
+  areaId?: string
+  note?: string
 }
 
 export interface Settings {

@@ -58,6 +58,10 @@ export default function BreakdownSheet({
           These measure different timeframes, so a low overall score next to a high quota (or the reverse)
           isn't a bug.
         </p>
+        <p className="mt-2 text-xs opacity-50">
+          Todos aren't scored — checking one off is just bookkeeping and never moves this badge. Only
+          routines count toward Consistency.
+        </p>
 
         <ul className="mt-4 space-y-2">
           {strengths.map(({ routine, value }) => (

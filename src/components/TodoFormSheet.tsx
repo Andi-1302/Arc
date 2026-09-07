@@ -3,12 +3,17 @@ import { createPortal } from 'react-dom'
 import { useLiveQuery } from 'dexie-react-hooks'
 import { db, type Todo } from '../db'
 import { deleteTodo, updateTodo } from '../lib/actions'
+import PriorityChips from './PriorityChips'
 
 export default function TodoFormSheet({ todo, onClose }: { todo: Todo; onClose: () => void }) {
   const goals = useLiveQuery(() => db.goals.where('status').notEqual('archived').sortBy('name'))
+  const areas = useLiveQuery(() => db.areas.orderBy('sortOrder').toArray())
   const [title, setTitle] = useState(todo.title)
   const [dueDate, setDueDate] = useState(todo.dueDate ?? '')
   const [goalId, setGoalId] = useState(todo.goalId ?? '')
+  const [areaId, setAreaId] = useState(todo.areaId)
+  const [priority, setPriority] = useState<0 | 1 | 2>(todo.priority ?? 0)
+  const [note, setNote] = useState(todo.note ?? '')
   const [saving, setSaving] = useState(false)
 
   async function handleSave() {
@@ -18,6 +23,9 @@ export default function TodoFormSheet({ todo, onClose }: { todo: Todo; onClose: 
       title: title.trim(),
       dueDate: dueDate || undefined,
       goalId: goalId || undefined,
+      areaId,
+      priority,
+      note: note.trim() || undefined,
     })
     setSaving(false)
     onClose()
@@ -51,6 +59,14 @@ export default function TodoFormSheet({ todo, onClose }: { todo: Todo; onClose: 
               className="mt-1 w-full rounded-lg border border-black/10 px-3 py-2"
             />
           </label>
+
+          <div>
+            <p className="text-sm">Priority</p>
+            <div className="mt-1.5">
+              <PriorityChips value={priority} onChange={setPriority} size="md" />
+            </div>
+          </div>
+
           <label className="block text-sm">
             Due date (optional)
             <input
@@ -74,6 +90,44 @@ export default function TodoFormSheet({ todo, onClose }: { todo: Todo; onClose: 
                 </option>
               ))}
             </select>
+          </label>
+
+          <div>
+            <p className="text-sm opacity-70">Area (optional)</p>
+            <div className="mt-1.5 flex flex-wrap gap-1.5">
+              <button
+                type="button"
+                onClick={() => setAreaId(undefined)}
+                className={`rounded-full border px-2.5 py-1 text-xs ${
+                  !areaId ? 'border-accent bg-accent/5 text-accent' : 'border-black/10'
+                }`}
+              >
+                None
+              </button>
+              {areas?.map((area) => (
+                <button
+                  key={area.id}
+                  type="button"
+                  onClick={() => setAreaId(area.id)}
+                  className={`flex items-center gap-1.5 rounded-full border px-2.5 py-1 text-xs ${
+                    areaId === area.id ? 'border-accent bg-accent/5 text-accent' : 'border-black/10'
+                  }`}
+                >
+                  <span className="h-2 w-2 rounded-full" style={{ backgroundColor: area.color }} />
+                  {area.name}
+                </button>
+              ))}
+            </div>
+          </div>
+
+          <label className="block text-sm">
+            Note (optional)
+            <textarea
+              value={note}
+              onChange={(e) => setNote(e.target.value)}
+              rows={3}
+              className="mt-1 w-full rounded-lg border border-black/10 px-3 py-2"
+            />
           </label>
         </div>
 

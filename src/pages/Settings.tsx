@@ -2,7 +2,14 @@ import { useEffect, useRef, useState } from 'react'
 import { Link } from 'react-router-dom'
 import { useLiveQuery } from 'dexie-react-hooks'
 import { db, SETTINGS_ID } from '../db'
-import { exportBackup, importBackup, loadDemoData, updateSettings } from '../lib/actions'
+import {
+  convertOneOffPlanEntriesToTodos,
+  exportBackup,
+  importBackup,
+  loadDemoData,
+  planEntryConversionPreview,
+  updateSettings,
+} from '../lib/actions'
 
 export default function Settings() {
   const settings = useLiveQuery(() => db.settings.get(SETTINGS_ID))
@@ -16,6 +23,8 @@ export default function Settings() {
   const [importing, setImporting] = useState(false)
   const [demoBusy, setDemoBusy] = useState(false)
   const [demoMessage, setDemoMessage] = useState<string | null>(null)
+  const [convertBusy, setConvertBusy] = useState(false)
+  const [convertMessage, setConvertMessage] = useState<string | null>(null)
 
   useEffect(() => {
     if (!settings) return
@@ -98,6 +107,28 @@ export default function Settings() {
       setDemoMessage(err instanceof Error ? err.message : 'Could not load demo data.')
     } finally {
       setDemoBusy(false)
+    }
+  }
+
+  async function handleConvertOneOffs() {
+    setConvertBusy(true)
+    setConvertMessage(null)
+    try {
+      const preview = await planEntryConversionPreview()
+      if (preview.count === 0) {
+        setConvertMessage('No untimed one-off plan entries to move.')
+        return
+      }
+      const list = preview.titles.map((t) => `• ${t}`).join('\n')
+      const noun = preview.count === 1 ? 'entry' : 'entries'
+      const confirmed = window.confirm(
+        `Move ${preview.count} untimed one-off plan ${noun} to Todos?\n\n${list}\n\nThe original plan ${noun} (and their checks) will be deleted.`,
+      )
+      if (!confirmed) return
+      const moved = await convertOneOffPlanEntriesToTodos()
+      setConvertMessage(`Moved ${moved} ${moved === 1 ? 'entry' : 'entries'} to Todos.`)
+    } finally {
+      setConvertBusy(false)
     }
   }
 
@@ -216,6 +247,22 @@ export default function Settings() {
             className="shrink-0"
           />
         </label>
+      </section>
+
+      <section className="mt-6 px-4">
+        <h2 className="font-display text-lg font-semibold">Data</h2>
+        <p className="mt-1 text-xs opacity-60">
+          One-off plan entries with no time are really todos, not timetable items — move them over.
+        </p>
+        <button
+          type="button"
+          onClick={handleConvertOneOffs}
+          disabled={convertBusy}
+          className="mt-2 w-full rounded-lg border border-black/10 py-2.5 text-sm font-medium disabled:opacity-50"
+        >
+          {convertBusy ? 'Working…' : 'Move one-off plan entries to Todos'}
+        </button>
+        {convertMessage && <p className="mt-2 text-xs opacity-80">{convertMessage}</p>}
       </section>
 
       {import.meta.env.DEV && (

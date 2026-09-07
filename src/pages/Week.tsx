@@ -87,7 +87,9 @@ export default function Week() {
         {days.map((date) => {
           const weekday = weekdayMon0(date)
           const dayRoutines = routines.filter((r) => r.schedule.includes(weekday))
-          const untimedEntries = entriesForDate(planEntries, date).filter((e) => !e.time)
+          // One-off (recurrence 'once') untimed entries are really todos, not timetable
+          // items — they don't belong here. Untimed *weekly* entries still do.
+          const untimedEntries = entriesForDate(planEntries, date).filter((e) => !e.time && e.recurrence !== 'once')
           return (
             <div key={date} className="flex min-w-0 flex-col gap-0.5 px-0.5">
               {dayRoutines.map((r) => {
