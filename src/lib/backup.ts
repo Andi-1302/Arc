@@ -44,24 +44,32 @@ export async function restoreFromBackupJson(json: string): Promise<void> {
   // Migrate before anything touches the DB — a rejected file leaves existing data untouched.
   const data = migrateBackupData(parsed)
 
+  // Decode every photo blob HERE, before db.transaction() opens — do NOT move this inside
+  // the callback. base64ToBlob() awaits fetch(), which is not a Dexie promise; awaiting it
+  // between the clear()s and the bulkAdd()s lets the IndexedDB transaction go idle and
+  // auto-commit, committing the clears but never repopulating any table after `photos`
+  // in db.tables (settings, planEntries, todos, workoutTemplates, workoutSessions) — a
+  // silent wipe. Nothing inside the callback may await anything but a Dexie promise.
+  const photoRows = Array.isArray(data.photos) ? data.photos : []
+  const restoredPhotos = await Promise.all(
+    photoRows.map(async (r) => {
+      const photo = r as { blob: string }
+      return { ...photo, blob: await base64ToBlob(photo.blob) }
+    }),
+  )
+
   await db.transaction('rw', db.tables, async () => {
     for (const table of db.tables) {
       await table.clear()
     }
     for (const table of db.tables) {
+      if (table.name === 'photos') {
+        if (restoredPhotos.length > 0) await table.bulkAdd(restoredPhotos)
+        continue
+      }
       const rows = data[table.name]
       if (!Array.isArray(rows) || rows.length === 0) continue
-      if (table.name === 'photos') {
-        const restored = await Promise.all(
-          rows.map(async (r) => {
-            const photo = r as { blob: string }
-            return { ...photo, blob: await base64ToBlob(photo.blob) }
-          }),
-        )
-        await table.bulkAdd(restored)
-      } else {
-        await table.bulkAdd(rows)
-      }
+      await table.bulkAdd(rows)
     }
   })
 }
