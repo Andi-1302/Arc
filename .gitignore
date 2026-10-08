@@ -18,6 +18,9 @@ dist-ssr
 /blob-report/
 /playwright/.cache/
 
+# Personal data used to reproduce real-world bugs — never commit (repo is public).
+/private-fixtures/
+
 # Editor directories and files
 .vscode/*
 !.vscode/extensions.json
