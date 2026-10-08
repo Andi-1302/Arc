@@ -16,4 +16,25 @@ describe('reorderIds', () => {
     const current = ['AAA', 'BBB', 'CCC', 'DDD']
     expect(reorderIds(current, 'DDD', 1)).toEqual(['AAA', 'DDD', 'BBB', 'CCC'])
   })
+
+  it('moves the dragged item to the end when the pointer is past every item', () => {
+    // AAA dragged down past BBB's midpoint entirely (or off the bottom of the window) —
+    // handlePointerMove's scan loop never breaks, so targetIndex defaults to
+    // current.length (2), one past the last valid index. AAA should end up last, not
+    // stay in place.
+    const current = ['AAA', 'BBB']
+    expect(reorderIds(current, 'AAA', 2)).toEqual(['BBB', 'AAA'])
+  })
+
+  it('appends to the end from any starting position, not just second-to-last', () => {
+    // Same "pointer past everything" case as above but with more items, to confirm the
+    // insertion lands at the very end regardless of draggedIndex.
+    const current = ['AAA', 'BBB', 'CCC', 'DDD', 'EEE']
+    expect(reorderIds(current, 'AAA', 5)).toEqual(['BBB', 'CCC', 'DDD', 'EEE', 'AAA'])
+  })
+
+  it('is a no-op when the target is the dragged item itself', () => {
+    const current = ['AAA', 'BBB', 'CCC']
+    expect(reorderIds(current, 'BBB', 1)).toEqual(['AAA', 'BBB', 'CCC'])
+  })
 })
