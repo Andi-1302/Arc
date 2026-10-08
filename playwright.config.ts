@@ -17,6 +17,13 @@ export default defineConfig({
     {
       name: 'chromium',
       use: { ...devices['Desktop Chrome'] },
+      // backup-webkit-blob.spec.ts only means anything under WebKit (see webkit-backup below).
+      testIgnore: '**/backup-webkit-blob.spec.ts',
+    },
+    {
+      name: 'webkit-backup',
+      use: { ...devices['Desktop Safari'] },
+      testMatch: '**/backup-webkit-blob.spec.ts',
     },
   ],
   webServer: {

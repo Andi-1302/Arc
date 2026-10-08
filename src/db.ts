@@ -280,6 +280,15 @@ export interface Settings {
 
 export const SETTINGS_ID = 'settings'
 
+/** Single source of truth for a fresh settings row — used by both initial seeding and self-healing writes. */
+export const DEFAULT_SETTINGS: Settings = {
+  id: SETTINGS_ID,
+  dailyQuestion: 'How was your day?',
+  newCardsPerDay: 10,
+  dueCardsPerDay: 30,
+  hideRoutineChecklist: false,
+}
+
 export class BlocksDB extends Dexie {
   areas!: EntityTable<Area, 'id'>
   goals!: EntityTable<Goal, 'id'>

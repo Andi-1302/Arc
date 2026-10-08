@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState } from 'react'
 import { Link } from 'react-router-dom'
 import { useLiveQuery } from 'dexie-react-hooks'
-import { db, SETTINGS_ID } from '../db'
+import { db, DEFAULT_SETTINGS, SETTINGS_ID } from '../db'
 import {
   convertOneOffPlanEntriesToTodos,
   exportBackup,
@@ -10,9 +10,34 @@ import {
   planEntryConversionPreview,
   updateSettings,
 } from '../lib/actions'
+import ErrorBoundary from '../components/ErrorBoundary'
 
 export default function Settings() {
+  return (
+    <ErrorBoundary
+      fallback={(error) => (
+        <div className="p-4">
+          <p className="text-sm font-medium">Something went wrong on the Settings page.</p>
+          <p className="mt-1 text-sm opacity-60">{error.message}</p>
+        </div>
+      )}
+    >
+      <SettingsContent />
+    </ErrorBoundary>
+  )
+}
+
+/**
+ * Split out from `Settings` so the ErrorBoundary above can actually catch a render
+ * error here — a boundary never catches errors from the component that renders it,
+ * only from its descendants.
+ */
+function SettingsContent() {
+  // `settings` is undefined both while the live query is still loading and if the row
+  // is ever genuinely missing (e.g. after a restore that touched that table). Either
+  // way the page falls back to DEFAULT_SETTINGS and renders real UI — never blank.
   const settings = useLiveQuery(() => db.settings.get(SETTINGS_ID))
+  const effectiveSettings = settings ?? DEFAULT_SETTINGS
   const fileInputRef = useRef<HTMLInputElement>(null)
 
   const [question, setQuestion] = useState('')
@@ -27,39 +52,36 @@ export default function Settings() {
   const [convertMessage, setConvertMessage] = useState<string | null>(null)
 
   useEffect(() => {
-    if (!settings) return
-    setQuestion(settings.dailyQuestion)
-    setDueCap(String(settings.dueCardsPerDay))
-    setNewCap(String(settings.newCardsPerDay))
-    setCutoffHour(String(settings.dayCutoffHour ?? 4))
-  }, [settings])
-
-  if (!settings) return null
+    setQuestion(effectiveSettings.dailyQuestion)
+    setDueCap(String(effectiveSettings.dueCardsPerDay))
+    setNewCap(String(effectiveSettings.newCardsPerDay))
+    setCutoffHour(String(effectiveSettings.dayCutoffHour ?? 4))
+  }, [effectiveSettings])
 
   async function handleQuestionBlur() {
     const trimmed = question.trim()
-    if (trimmed && trimmed !== settings!.dailyQuestion) {
+    if (trimmed && trimmed !== effectiveSettings.dailyQuestion) {
       await updateSettings({ dailyQuestion: trimmed })
     }
   }
 
   async function handleDueCapBlur() {
     const n = Math.round(Number(dueCap))
-    if (Number.isFinite(n) && n > 0 && n !== settings!.dueCardsPerDay) {
+    if (Number.isFinite(n) && n > 0 && n !== effectiveSettings.dueCardsPerDay) {
       await updateSettings({ dueCardsPerDay: n })
     }
   }
 
   async function handleNewCapBlur() {
     const n = Math.round(Number(newCap))
-    if (Number.isFinite(n) && n > 0 && n !== settings!.newCardsPerDay) {
+    if (Number.isFinite(n) && n > 0 && n !== effectiveSettings.newCardsPerDay) {
       await updateSettings({ newCardsPerDay: n })
     }
   }
 
   async function handleCutoffBlur() {
     const n = Math.round(Number(cutoffHour))
-    if (Number.isFinite(n) && n >= 0 && n <= 12 && n !== (settings!.dayCutoffHour ?? 4)) {
+    if (Number.isFinite(n) && n >= 0 && n <= 12 && n !== (effectiveSettings.dayCutoffHour ?? 4)) {
       await updateSettings({ dayCutoffHour: n })
     }
   }
@@ -132,7 +154,9 @@ export default function Settings() {
     }
   }
 
-  const lastBackupLabel = settings.lastBackupAt ? new Date(settings.lastBackupAt).toLocaleDateString() : 'Never'
+  const lastBackupLabel = effectiveSettings.lastBackupAt
+    ? new Date(effectiveSettings.lastBackupAt).toLocaleDateString()
+    : 'Never'
 
   return (
     <div className="pb-8">
@@ -242,7 +266,7 @@ export default function Settings() {
           </span>
           <input
             type="checkbox"
-            checked={settings.hideRoutineChecklist}
+            checked={effectiveSettings.hideRoutineChecklist}
             onChange={(e) => updateSettings({ hideRoutineChecklist: e.target.checked })}
             className="shrink-0"
           />

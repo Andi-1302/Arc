@@ -1,5 +1,6 @@
 import {
   db,
+  DEFAULT_SETTINGS,
   SETTINGS_ID,
   type Card,
   type Goal,
@@ -208,8 +209,15 @@ export async function deleteMilestone(id: string) {
   await db.milestones.delete(id)
 }
 
+/**
+ * Self-healing: Dexie's `.update()` silently no-ops if the row doesn't exist, which would
+ * otherwise lose an edit made while the settings row is missing (e.g. after a restore
+ * that touched that table). Reads the current row (or DEFAULT_SETTINGS as a fallback),
+ * merges the patch, and `put()`s it back — creating the row if it was missing.
+ */
 export async function updateSettings(patch: Partial<Omit<Settings, 'id'>>) {
-  await db.settings.update(SETTINGS_ID, patch)
+  const current = (await db.settings.get(SETTINGS_ID)) ?? DEFAULT_SETTINGS
+  await db.settings.put({ ...current, ...patch })
 }
 
 /** Toggle an exercise's Workout-stats visibility (auto ↔ never), keyed by its normalised name. */

@@ -1,5 +1,5 @@
 import type { BlocksDB } from './db'
-import { SETTINGS_ID } from './db'
+import { DEFAULT_SETTINGS } from './db'
 
 const uid = () => crypto.randomUUID()
 const today = () => new Date().toISOString().slice(0, 10)
@@ -196,11 +196,5 @@ export function seedInitialData(db: BlocksDB) {
     { id: uid(), goalId: goalKnowledgeExample, front: 'Second example question', back: 'Second example answer', ease: 2.5, intervalDays: 0, dueDate: today(), reps: 0, createdAt },
   ])
 
-  db.settings.add({
-    id: SETTINGS_ID,
-    dailyQuestion: 'How was your day?',
-    newCardsPerDay: 10,
-    dueCardsPerDay: 30,
-    hideRoutineChecklist: false,
-  })
+  db.settings.add(DEFAULT_SETTINGS)
 }
