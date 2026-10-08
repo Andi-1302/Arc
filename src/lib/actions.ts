@@ -214,10 +214,16 @@ export async function deleteMilestone(id: string) {
  * otherwise lose an edit made while the settings row is missing (e.g. after a restore
  * that touched that table). Reads the current row (or DEFAULT_SETTINGS as a fallback),
  * merges the patch, and `put()`s it back — creating the row if it was missing.
+ * Read and write happen inside one Dexie transaction so this read-modify-write stays
+ * atomic: two concurrent calls (e.g. a checkbox's onChange firing while another field's
+ * blur-triggered call is still in flight — see Settings.tsx) must not let one patch
+ * clobber the other by both reading the same stale row before either writes it back.
  */
 export async function updateSettings(patch: Partial<Omit<Settings, 'id'>>) {
-  const current = (await db.settings.get(SETTINGS_ID)) ?? DEFAULT_SETTINGS
-  await db.settings.put({ ...current, ...patch })
+  await db.transaction('rw', db.settings, async () => {
+    const current = (await db.settings.get(SETTINGS_ID)) ?? DEFAULT_SETTINGS
+    await db.settings.put({ ...current, ...patch })
+  })
 }
 
 /** Toggle an exercise's Workout-stats visibility (auto ↔ never), keyed by its normalised name. */

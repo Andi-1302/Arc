@@ -13,13 +13,22 @@ function blobToBase64(blob: Blob): Promise<string> {
 
 /**
  * Decodes a `data:` URL back into a Blob, synchronously. Deliberately does NOT go
- * through `fetch(dataUrl).then(r => r.blob())` (the previous implementation): WebKit's
- * IndexedDB can't structured-clone-store a Blob built that way — `photos.bulkAdd()`
- * throws "Error preparing Blob/File data to be stored in object store" on Safari/iOS,
- * even though the exact same backup imports fine on Chromium. Plain `atob` + a manual
- * byte array + the `Blob` constructor avoids whatever internal representation WebKit's
- * fetch-produced Blobs get. Being synchronous also means this can't be the thing that
- * leaves a Dexie transaction idle mid-restore (see the comment in restoreFromBackupJson).
+ * through `fetch(dataUrl).then(r => r.blob())` (the previous implementation): a real
+ * user hit "Error preparing Blob/File data to be stored in object store" restoring a
+ * backup on Safari/iOS, and a fetch-built Blob failing WebKit's IndexedDB structured-
+ * clone while the exact same bytes work fine on Chromium is a bug pattern reported
+ * elsewhere for other projects too. Plain `atob` + a manual byte array + the `Blob`
+ * constructor is fewer moving parts and sidesteps that reported pattern — but note this
+ * is NOT locally provable: every Blob-construction method (fetch-built or atob-built)
+ * fails identically under Playwright's default (ephemeral) WebKit context, and both
+ * succeed under a persistent WebKit context (see e2e/backup-webkit-blob.spec.ts and its
+ * ./fixtures/webkitPersistentContext), so neither this repo's unit tests nor its e2e
+ * suite can locally distinguish "fixed the real bug" from "changed something unrelated
+ * that happens to still work." Treat this as a reasonable, lower-risk change motivated
+ * by the reported pattern, not as a proven root-cause fix. Being synchronous also means
+ * this can't be the thing that leaves a Dexie transaction idle mid-restore (see the
+ * comment in restoreFromBackupJson) — that part IS established, independent of which
+ * Blob-construction method is used.
  */
 export function base64ToBlob(dataUrl: string): Blob {
   const match = /^data:([^;]+);base64,(.*)$/.exec(dataUrl)

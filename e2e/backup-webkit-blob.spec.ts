@@ -2,14 +2,24 @@ import fs from 'node:fs'
 import path from 'node:path'
 import { test, expect } from './fixtures/webkitPersistentContext'
 
-// Reproduces (and guards against regressing) a WebKit-only import bug: base64ToBlob()
-// used to build its Blob via fetch(dataUrl).then(r => r.blob()), which WebKit's
-// IndexedDB can't structured-clone-store ("Error preparing Blob/File data to be stored
-// in object store"). The exact same file imports fine on Chromium, so this only means
-// anything when it actually runs under WebKit — see the `webkit-backup` Playwright
-// project in playwright.config.ts, which is the only project this spec runs under.
-// (It uses a persistent WebKit context via ./fixtures/webkitPersistentContext — see
-// that file for why: Playwright's normal WebKit context can't store Blobs at all.)
+// Guards against regressing restoreFromBackupJson() on WebKit in general — importing a
+// real, large, multi-table backup (including a photo Blob) must succeed with no error
+// dialog and a normal Settings page afterward. It runs against the `webkit-backup`
+// Playwright project in playwright.config.ts (the only project this spec runs under),
+// using a persistent WebKit context via ./fixtures/webkitPersistentContext — see that
+// file for why: Playwright's default (ephemeral) WebKit context behaves like Safari
+// Private Browsing and can't store a Blob via IndexedDB AT ALL, regardless of how the
+// Blob was built ("Error preparing Blob/File data to be stored in object store"); the
+// persistent context is what makes Blob storage work here, matching normal Safari.
+//
+// What this does NOT prove: base64ToBlob()'s atob-based rewrite (vs. its previous
+// fetch(dataUrl).then(r => r.blob()) implementation) is specifically what fixed a real
+// user's real-device Safari failure. Under this persistent-context fixture, BOTH the
+// old fetch-based and the new atob-based construction succeed — so reverting to the
+// fetch-based implementation would still pass this spec. The atob rewrite is kept as a
+// reasonable, lower-risk change (fewer moving parts, matches a bug pattern reported
+// elsewhere for other projects), not as something this test can regression-test
+// specifically. See the base64ToBlob doc comment in src/lib/backup.ts for more.
 //
 // The fixture holds real personal data and is gitignored (/private-fixtures/), so it's
 // never present in CI — this test is a no-op there.
