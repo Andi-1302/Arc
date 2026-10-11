@@ -1,7 +1,7 @@
-# Project Spec: "Blocks" — Personal Goal & Training Tracker (PWA)
+# Project Spec: "Arc" — Personal Goal & Training Tracker (PWA)
 
 > This document is the single source of truth. Build exactly this scope. Everything under "Roadmap (v2)" is explicitly OUT of scope — do not architect against it, but do not build it.
-> Working title "Blocks" (after training blocks / periodization). Rename only if the user asks.
+> Renamed from the working title "Blocks" (after training blocks / periodization) to "Arc" on 2026-10-11. The Dexie/IndexedDB database name and all storage keys deliberately stayed as "blocks" — existing user data must stay intact.
 
 ## 1. Purpose & philosophy
 

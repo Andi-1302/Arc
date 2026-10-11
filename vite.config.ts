@@ -26,8 +26,8 @@ export default defineConfig({
         globPatterns: ['**/*.{js,css,html,ico,png,svg,webmanifest,woff,woff2}'],
       },
       manifest: {
-        name: 'Blocks',
-        short_name: 'Blocks',
+        name: 'Arc',
+        short_name: 'Arc',
         description: 'Personal goal & training tracker',
         theme_color: '#1f4fe0',
         background_color: '#f4f5f3',

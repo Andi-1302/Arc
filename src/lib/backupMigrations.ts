@@ -35,7 +35,7 @@ export function migrateBackupData(
   targetVersion: number = BACKUP_VERSION,
 ): BackupData {
   if (!parsed || typeof parsed !== 'object') {
-    throw new Error("This file doesn't look like a Blocks backup.")
+    throw new Error("This file doesn't look like an Arc backup.")
   }
 
   const envelope = parsed as { version?: unknown; data?: unknown }
@@ -44,12 +44,12 @@ export function migrateBackupData(
 
   if (version > targetVersion) {
     throw new Error(
-      `This backup was made by a newer version of Blocks (backup format v${version}); this app only understands up to v${targetVersion}. Update the app, then import again.`,
+      `This backup was made by a newer version of Arc (backup format v${version}); this app only understands up to v${targetVersion}. Update the app, then import again.`,
     )
   }
 
   if (!envelope.data || typeof envelope.data !== 'object') {
-    throw new Error("This file doesn't look like a Blocks backup.")
+    throw new Error("This file doesn't look like an Arc backup.")
   }
 
   let data = envelope.data as BackupData

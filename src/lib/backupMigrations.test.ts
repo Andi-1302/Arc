@@ -20,12 +20,12 @@ describe('migrateBackupData', () => {
   })
 
   it('rejects a file that is not an object', () => {
-    expect(() => migrateBackupData(null)).toThrow(/Blocks backup/i)
-    expect(() => migrateBackupData('nope')).toThrow(/Blocks backup/i)
+    expect(() => migrateBackupData(null)).toThrow(/Arc backup/i)
+    expect(() => migrateBackupData('nope')).toThrow(/Arc backup/i)
   })
 
   it('rejects an envelope with no data', () => {
-    expect(() => migrateBackupData({ version: BACKUP_VERSION })).toThrow(/Blocks backup/i)
+    expect(() => migrateBackupData({ version: BACKUP_VERSION })).toThrow(/Arc backup/i)
   })
 
   it('runs injected migration steps in order up to the target version', () => {

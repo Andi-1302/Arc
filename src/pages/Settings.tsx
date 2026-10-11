@@ -307,7 +307,7 @@ function SettingsContent() {
         </section>
       )}
 
-      <p className="mt-6 px-4 text-xs opacity-50">Blocks v{__APP_VERSION__}</p>
+      <p className="mt-6 px-4 text-xs opacity-50">Arc v{__APP_VERSION__}</p>
     </div>
   )
 }
